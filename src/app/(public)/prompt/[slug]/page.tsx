@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     if (!prompt) return { title: 'Prompt Not Found' };
 
     const title = prompt.metaTitle || `${prompt.title} | AI Prompt for ${prompt.tool} | PromptWale`;
-    const categoryName = (prompt as any).categories?.[0]?.name || "AI Prompt";
+    const categoryName = prompt.categories?.[0]?.name || "AI Prompt";
     const description = prompt.metaDescription || prompt.description || `Get this high-quality ${prompt.tool} prompt for ${categoryName}. Achieve professional AI results with PromptWale.`;
 
     return {
@@ -50,7 +50,7 @@ export default async function PromptPage({ params }: { params: Promise<{ slug: s
     // Track view asynchronously
     trackPromptView(prompt.id);
 
-    const firstCategoryId = (prompt as any).categories?.[0]?.id || "";
+    const firstCategoryId = prompt.categories?.[0]?.id || "";
 
     // Fetch related prompts
     const relatedPrompts = firstCategoryId ? await getRelatedPrompts(firstCategoryId, prompt.id) : [];
@@ -59,9 +59,9 @@ export default async function PromptPage({ params }: { params: Promise<{ slug: s
         '@context': 'https://schema.org',
         '@type': 'CreativeWork',
         name: prompt.title,
-        description: prompt.description || prompt.metaDescription,
+        description: prompt.description || prompt.metaDescription || "",
         image: prompt.afterImage,
-        genre: (prompt as any).categories?.[0]?.name || "AI Prompt",
+        genre: prompt.categories?.[0]?.name || "AI Prompt",
         publisher: {
             '@type': 'Organization',
             name: 'PromptWale',
@@ -86,16 +86,16 @@ export default async function PromptPage({ params }: { params: Promise<{ slug: s
             />
             <Navbar />
 
-            <main className="flex-1 pt-16">
+            <main className="flex-1">
                 <div className="container mx-auto px-4 py-8 max-w-6xl">
                     {/* Breadcrumb */}
                     <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-8">
                         <Link href="/" className="hover:text-primary transition-colors">Home</Link>
                         <CornerDownRight size={14} />
-                        {(prompt as any).categories?.map((cat: any, i: number) => (
+                        {prompt.categories?.map((cat, i: number) => (
                             <div key={cat.id} className="flex items-center space-x-2">
                                 <Link href={`/categories/${cat.slug}`} className="hover:text-primary transition-colors">{cat.name}</Link>
-                                {i < (prompt as any).categories.length - 1 && <span className="opacity-50">,</span>}
+                                {i < prompt.categories.length - 1 && <span className="opacity-50">,</span>}
                             </div>
                         ))}
                         <CornerDownRight size={14} />
@@ -109,6 +109,7 @@ export default async function PromptPage({ params }: { params: Promise<{ slug: s
                                 beforeImage={prompt.beforeImage}
                                 afterImage={prompt.afterImage}
                                 title={prompt.title}
+                                thumbnailPos={prompt.thumbnailPos}
                             />
 
                             <div className="grid grid-cols-3 gap-4">
@@ -119,6 +120,7 @@ export default async function PromptPage({ params }: { params: Promise<{ slug: s
                                         fill
                                         sizes="100px"
                                         className="object-cover transition-transform group-hover:scale-110"
+                                        style={{ objectPosition: prompt.thumbnailPos || "center" }}
                                     />
                                     <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-white font-bold text-[10px] uppercase opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
                                         Original
@@ -131,6 +133,7 @@ export default async function PromptPage({ params }: { params: Promise<{ slug: s
                                         fill
                                         sizes="100px"
                                         className="object-cover transition-transform group-hover:scale-110"
+                                        style={{ objectPosition: prompt.thumbnailPos || "center" }}
                                     />
                                     <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-white font-bold text-[10px] uppercase opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
                                         Result
@@ -142,7 +145,7 @@ export default async function PromptPage({ params }: { params: Promise<{ slug: s
                         {/* Details Section */}
                         <div className="flex flex-col">
                             <div className="flex flex-wrap items-center gap-2 mb-4">
-                                {(prompt as any).categories?.map((cat: any) => (
+                                {prompt.categories?.map((cat) => (
                                     <span key={cat.id} className="px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full text-[10px] font-bold uppercase tracking-widest">
                                         {cat.name}
                                     </span>
@@ -227,7 +230,7 @@ export default async function PromptPage({ params }: { params: Promise<{ slug: s
                                     <CopyButton promptId={prompt.id} promptText={prompt.promptText} />
                                     <ShareButton />
                                 </div>
-                                <ReportModal />
+                                <ReportModal promptId={prompt.id} />
                             </div>
 
                         </div>
@@ -242,22 +245,22 @@ export default async function PromptPage({ params }: { params: Promise<{ slug: s
                                         <ThumbsUp size={24} className="text-primary" />
                                         <span>Related Prompts</span>
                                     </h2>
-                                    <p className="text-muted-foreground">More prompts from the {(prompt as any).categories?.[0]?.name || "collection"}.</p>
+                                    <p className="text-muted-foreground">More prompts from the {prompt.categories?.[0]?.name || "collection"}.</p>
                                 </div>
-                                {(prompt as any).categories?.[0] && (
-                                    <Link href={`/categories/${(prompt as any).categories[0].slug}`} className="text-sm font-bold text-primary hover:underline">
+                                {prompt.categories?.[0] && (
+                                    <Link href={`/categories/${prompt.categories[0].slug}`} className="text-sm font-bold text-primary hover:underline">
                                         View Category →
                                     </Link>
                                 )}
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                                {relatedPrompts.map((related: any) => (
+                                {relatedPrompts.map((related: { id: string; title: string; categories?: { name: string }[]; tool: string; beforeImage: string; afterImage: string; views: number; copies: number; slug: string; thumbnailPos?: string }) => (
                                     <PromptCard
                                         key={related.id}
                                         id={related.id}
                                         title={related.title}
-                                        category={related.categories?.map((c: any) => c.name).join(", ") || ""}
+                                        category={related.categories?.map((c: { name: string }) => c.name).join(", ") || ""}
                                         tool={related.tool}
                                         beforeImage={related.beforeImage}
                                         afterImage={related.afterImage}
@@ -275,3 +278,4 @@ export default async function PromptPage({ params }: { params: Promise<{ slug: s
         </div>
     );
 }
+

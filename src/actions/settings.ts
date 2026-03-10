@@ -1,49 +1,74 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, unstable_cache } from "next/cache";
+import { Prisma } from "@prisma/client";
+import { verifyAdminSession } from "@/lib/auth";
+import { createAuditLog } from "@/lib/audit";
 
-export async function getSystemSettings() {
+export const getSystemSettings = unstable_cache(
+    async () => {
+        try {
+            let settings = await prisma.systemSettings.findUnique({
+                where: { id: "global" }
+            });
+
+            if (!settings) {
+                // Create default settings if none exist
+                settings = await prisma.systemSettings.create({
+                    data: {
+                        id: "global",
+                        maintenanceMode: false,
+                        siteName: "PromptWale",
+                        baseUrl: "https://promptwale.com",
+                        adminEmail: "admin@promptwale.com",
+                    }
+                });
+            }
+
+            return settings;
+        } catch (error) {
+            console.error("Failed to fetch settings:", error);
+            // Silent fallback for public layout
+            return { id: "global", maintenanceMode: false, siteName: "PromptWale", baseUrl: "https://promptwale.com", adminEmail: "admin@promptwale.com", updatedAt: new Date() };
+        }
+    },
+    ['system-settings'],
+    { revalidate: 60, tags: ['settings'] }
+);
+
+export async function updateSystemSettings(data: { maintenanceMode?: boolean, siteName?: string, baseUrl?: string, adminEmail?: string }) {
+    await verifyAdminSession();
+
     try {
-        // Fallback to raw query if model is missing in generated client due to Windows file locks
-        const result = await (prisma as any).$queryRawUnsafe(`SELECT * FROM "SystemSettings" WHERE id = 'global' LIMIT 1`);
-        let settings = result[0];
+        const updateData: Prisma.SystemSettingsUpdateInput = {};
+        if (data.maintenanceMode !== undefined) updateData.maintenanceMode = data.maintenanceMode;
+        if (data.siteName !== undefined) updateData.siteName = data.siteName;
+        if (data.baseUrl !== undefined) updateData.baseUrl = data.baseUrl;
+        if (data.adminEmail !== undefined) updateData.adminEmail = data.adminEmail;
 
-        if (!settings) {
-            // Create default settings if none exist
-            await (prisma as any).$queryRawUnsafe(`
-                INSERT INTO "SystemSettings" (id, "maintenanceMode", "siteName", "updatedAt") 
-                VALUES ('global', false, 'PromptWale', NOW())
-                ON CONFLICT (id) DO NOTHING
-            `);
-            settings = { id: "global", maintenanceMode: false, siteName: "PromptWale" };
-        }
-
-        return settings;
-    } catch (error) {
-        console.error("Failed to fetch settings:", error);
-        // Silent fallback for public layout
-        return { maintenanceMode: false, siteName: "PromptWale" };
-    }
-}
-
-export async function updateSystemSettings(data: { maintenanceMode?: boolean, siteName?: string }) {
-    try {
-        if (data.maintenanceMode !== undefined) {
-            await (prisma as any).$queryRawUnsafe(`
-                UPDATE "SystemSettings" SET "maintenanceMode" = ${data.maintenanceMode}, "updatedAt" = NOW() WHERE id = 'global'
-            `);
-        }
-        if (data.siteName !== undefined) {
-            await (prisma as any).$queryRawUnsafe(`
-                UPDATE "SystemSettings" SET "siteName" = '${data.siteName}', "updatedAt" = NOW() WHERE id = 'global'
-            `);
-        }
+        await prisma.systemSettings.update({
+            where: { id: "global" },
+            data: updateData
+        });
 
         revalidatePath('/', 'layout');
+        await createAuditLog("UPDATE_SETTINGS", `Updated system settings: ${data.siteName || 'system'}`);
         return { success: true };
     } catch (error) {
         console.error("Failed to update settings:", error);
         return { success: false, error: "Database error" };
+    }
+}
+
+export async function clearAppCache() {
+    await verifyAdminSession();
+    try {
+        revalidatePath('/', 'layout');
+        await createAuditLog("CLEAR_CACHE", "Cleared application system cache");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to clear cache:", error);
+        return { success: false, error: "Failed to invalidate cache" };
     }
 }

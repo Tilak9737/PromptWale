@@ -6,7 +6,7 @@ export default async function CategoriesPage() {
     const categories = await getAllCategories();
 
     return (
-        <main className="min-h-screen flex flex-col pt-16">
+        <main className="min-h-screen flex flex-col">
             <Navbar />
             <div className="container mx-auto px-4 py-16 flex-1">
                 <div className="text-center mb-16">
@@ -22,7 +22,7 @@ export default async function CategoriesPage() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                        {categories.map((cat: any) => (
+                        {categories.map((cat: { id: string; name: string; slug: string; _count: { prompts: number } }) => (
                             <Link
                                 href={`/categories/${cat.slug}`}
                                 key={cat.id}

@@ -28,6 +28,11 @@ model Prompt {
   metaTitle       String?
   metaDescription String?
   thumbnailPos    String     @default("center") // top, center, bottom
+  reports         Report[]
+
+  @@index([status])
+  @@index([tool])
+  @@index([isTrending])
 }
 
 model Category {
@@ -41,10 +46,15 @@ model Category {
 }
 
 model Admin {
-  id        String   @id @default(cuid())
-  username  String   @unique
-  password  String   // Hashed
-  createdAt DateTime @default(now())
+  id                String    @id @default(cuid())
+  username          String    @unique
+  password          String    // Hashed
+  passwordUpdatedAt DateTime  @default(now())
+  failedAttempts    Int       @default(0)
+  lockoutUntil      DateTime?
+  lastLoginAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 }
 
 model Analytics {
@@ -58,5 +68,27 @@ model SystemSettings {
   id              String   @id @default("global")
   maintenanceMode Boolean  @default(false)
   siteName        String   @default("PromptWale")
+  baseUrl         String   @default("https://promptwale.com")
+  adminEmail      String   @default("admin@promptwale.com")
   updatedAt       DateTime @updatedAt
+}
+
+model Report {
+  id        String   @id @default(cuid())
+  promptId  String
+  prompt    Prompt   @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  reason    String
+  details   String?  @db.Text
+  status    String   @default("pending") // pending, resolved, dismissed
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AdminAuditLog {
+  id        String   @id @default(cuid())
+  admin     String   // username
+  action    String
+  details   String?  @db.Text
+  targetId  String?
+  createdAt DateTime @default(now())
 }

@@ -5,27 +5,15 @@ import { useSearchParams } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import PromptCard from "@/components/ui/PromptCard";
 import { SearchIcon, SlidersHorizontal, Loader2 } from "lucide-react";
-import { searchPrompts } from "@/actions/prompt";
+import { searchPrompts, getLatestPrompts } from "@/actions/prompt";
 
 function SearchContent() {
     const searchParams = useSearchParams();
-    const initialTool = searchParams.get("tool") || "";
+    const queryParam = searchParams.get("q") || searchParams.get("tool") || "";
 
-    const [query, setQuery] = useState(initialTool);
-    const [results, setResults] = useState<any[]>([]);
+    const [query, setQuery] = useState(queryParam);
+    const [results, setResults] = useState<Array<{ id: string; title: string; categories?: { name: string }[]; tool: string; beforeImage: string; afterImage: string; views: number; copies: number; slug: string; thumbnailPos?: string }>>([]);
     const [isLoading, setIsLoading] = useState(false);
-
-    useEffect(() => {
-        if (initialTool && query === initialTool) {
-            // Trigger initial search if coming from tools page
-            (async () => {
-                setIsLoading(true);
-                const prompts = await searchPrompts(initialTool);
-                setResults(prompts);
-                setIsLoading(false);
-            })();
-        }
-    }, [initialTool]);
 
     useEffect(() => {
         const delayDebounceFn = setTimeout(async () => {
@@ -35,7 +23,6 @@ function SearchContent() {
                 setResults(prompts);
             } else {
                 // Fetch trending or latest if query is empty
-                const { getLatestPrompts } = await import("@/actions/prompt");
                 const prompts = await getLatestPrompts(12);
                 setResults(prompts);
             }
@@ -46,7 +33,7 @@ function SearchContent() {
     }, [query]);
 
     return (
-        <main className="min-h-screen flex flex-col pt-16">
+        <main className="min-h-screen flex flex-col">
             <Navbar />
             <div className="container mx-auto px-4 py-12 flex-1">
 
@@ -74,7 +61,7 @@ function SearchContent() {
                     <div className="flex items-center justify-center space-x-4 mt-6 text-sm text-muted-foreground">
                         <span className="flex items-center space-x-1 cursor-pointer hover:text-foreground transition-colors"><SlidersHorizontal size={14} /> <span>Advanced Filters</span></span>
                         <span>•</span>
-                        <span>Try: "Cyberpunk", "Gemini", "Portraits"</span>
+                        <span>Try: &quot;Cyberpunk&quot;, &quot;Gemini&quot;, &quot;Portraits&quot;</span>
                     </div>
                 </div>
 
@@ -105,7 +92,7 @@ function SearchContent() {
                         </div>
                     ) : results.length === 0 ? (
                         <div className="h-64 flex flex-col items-center justify-center text-center space-y-4 border-2 border-dashed border-border/50 rounded-3xl mb-8">
-                            <p className="font-bold text-lg">No prompts found for "{query}".</p>
+                            <p className="font-bold text-lg">No prompts found for &quot;{query}&quot;.</p>
                             <p className="text-muted-foreground text-sm">Try adjusting your keywords.</p>
                         </div>
                     ) : (
@@ -115,7 +102,7 @@ function SearchContent() {
                                     key={prompt.id}
                                     id={prompt.id}
                                     title={prompt.title}
-                                    category={prompt.categories?.map((c: any) => c.name).join(", ") || ""}
+                                    category={prompt.categories?.map((c: { name: string }) => c.name).join(", ") || ""}
                                     tool={prompt.tool}
                                     beforeImage={prompt.beforeImage}
                                     afterImage={prompt.afterImage}

@@ -1,4 +1,5 @@
 import { jwtVerify, SignJWT } from "jose";
+import { cookies } from "next/headers";
 
 const getJwtSecretKey = () => {
     const secret = process.env.JWT_SECRET;
@@ -15,7 +16,7 @@ export const verifyAuth = async (token: string) => {
             new TextEncoder().encode(getJwtSecretKey())
         );
         return verified.payload;
-    } catch (error) {
+    } catch {
         throw new Error("Your token is expired or invalid.");
     }
 };
@@ -29,3 +30,22 @@ export const createToken = async (payload: { role: string, username: string }) =
 
     return token;
 };
+
+export async function verifyAdminSession() {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("admin_token")?.value;
+
+    if (!token) {
+        throw new Error("Unauthorized: No session token found.");
+    }
+
+    try {
+        const payload = await verifyAuth(token);
+        if (payload.role !== "admin") {
+            throw new Error("Unauthorized: Invalid role.");
+        }
+        return payload;
+    } catch {
+        throw new Error("Unauthorized: Invalid session.");
+    }
+}

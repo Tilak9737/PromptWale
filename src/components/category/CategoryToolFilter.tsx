@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { Filter, X } from "lucide-react";
+import { Filter } from "lucide-react";
 import { useState } from "react";
 
 export default function CategoryToolFilter({ tools, currentTool }: { tools: string[], currentTool?: string }) {

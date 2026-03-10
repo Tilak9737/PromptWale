@@ -1,4 +1,4 @@
-import { Save, Loader2 } from "lucide-react";
+import { Save } from "lucide-react";
 import Link from "next/link";
 import { updateCategory } from "@/actions/admin";
 import prisma from "@/lib/prisma";
@@ -29,7 +29,7 @@ export default async function EditCategoryPage({ params }: { params: Promise<{ i
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight mb-2">Edit Category</h1>
-                    <p className="text-muted-foreground">Modify the details of '{category.name}'.</p>
+                    <p className="text-muted-foreground">Modify the details of &apos;{category.name}&apos;.</p>
                 </div>
                 <Link
                     href="/admin/categories"

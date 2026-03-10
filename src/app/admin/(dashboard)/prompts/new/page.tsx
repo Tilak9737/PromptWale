@@ -3,8 +3,12 @@
 import { useState, useEffect } from "react";
 import { UploadCloud, Save, Image as ImageIcon, Loader2, Globe, Sparkles, Layout } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createPrompt, getAllCategories } from "@/actions/admin";
+
+const MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 export default function NewPromptPage() {
     const router = useRouter();
@@ -21,7 +25,6 @@ export default function NewPromptPage() {
     const [thumbnailPos, setThumbnailPos] = useState("center");
     const [existingCategories, setExistingCategories] = useState<{ name: string }[]>([]);
 
-    const [status, setStatus] = useState("published");
 
     // File State
     const [beforeFile, setBeforeFile] = useState<File | null>(null);
@@ -43,6 +46,18 @@ export default function NewPromptPage() {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: "before" | "after") => {
         const file = e.target.files?.[0];
         if (file) {
+            if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+                alert("Invalid file type. Only JPG, PNG, and WEBP are allowed.");
+                e.target.value = "";
+                return;
+            }
+
+            if (file.size > MAX_UPLOAD_SIZE_BYTES) {
+                alert("File too large. Maximum size is 5MB.");
+                e.target.value = "";
+                return;
+            }
+
             const previewUrl = URL.createObjectURL(file);
             if (type === "before") {
                 setBeforeFile(file);
@@ -61,10 +76,24 @@ export default function NewPromptPage() {
         const res = await fetch("/api/upload", {
             method: "POST",
             body: formData,
+            credentials: "include",
         });
 
-        if (!res.ok) throw new Error("Failed to upload image.");
-        const data = await res.json();
+        if (!res.ok) {
+            let message = "Failed to upload image.";
+            try {
+                const errorData = await res.json() as { error?: string };
+                if (errorData?.error) message = errorData.error;
+            } catch {
+                // Ignore malformed error JSON and keep default message.
+            }
+            throw new Error(message);
+        }
+
+        const data = await res.json() as { url?: string; error?: string };
+        if (!data.url) {
+            throw new Error(data.error || "Upload response did not include a URL.");
+        }
         return data.url;
     };
 
@@ -104,7 +133,7 @@ export default function NewPromptPage() {
             }
         } catch (error) {
             console.error("Submission failed", error);
-            alert("Upload failed. Please try again.");
+            alert(error instanceof Error ? error.message : "Upload failed. Please try again.");
             setIsSubmitting(false);
         }
     };
@@ -156,23 +185,35 @@ export default function NewPromptPage() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="relative aspect-square border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center text-center hover:bg-muted/30 transition-colors overflow-hidden group">
                                     {beforePreview ? (
-                                        <img src={beforePreview} alt="Before" className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform" />
+                                        <Image src={beforePreview} alt="Before" fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover opacity-40 group-hover:scale-105 transition-transform" />
                                     ) : null}
                                     <div className="relative z-10 flex flex-col items-center p-2">
                                         <UploadCloud size={24} className="text-muted-foreground mb-1" />
                                         <span className="text-[10px] font-bold uppercase tracking-tighter">Base Image</span>
                                     </div>
-                                    <input type="file" onChange={(e) => handleFileChange(e, "before")} className="absolute inset-0 opacity-0 cursor-pointer z-20" required />
+                                    <input
+                                        type="file"
+                                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                                        onChange={(e) => handleFileChange(e, "before")}
+                                        className="absolute inset-0 opacity-0 cursor-pointer z-20"
+                                        required
+                                    />
                                 </div>
                                 <div className="relative aspect-square border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center text-center hover:bg-muted/30 transition-colors overflow-hidden group border-primary/20">
                                     {afterPreview ? (
-                                        <img src={afterPreview} alt="After" className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform" />
+                                        <Image src={afterPreview} alt="After" fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover opacity-40 group-hover:scale-105 transition-transform" />
                                     ) : null}
                                     <div className="relative z-10 flex flex-col items-center p-2">
                                         <UploadCloud size={24} className="text-primary mb-1" />
                                         <span className="text-[10px] font-bold uppercase tracking-tighter text-primary">Result Image</span>
                                     </div>
-                                    <input type="file" onChange={(e) => handleFileChange(e, "after")} className="absolute inset-0 opacity-0 cursor-pointer z-20" required />
+                                    <input
+                                        type="file"
+                                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                                        onChange={(e) => handleFileChange(e, "after")}
+                                        className="absolute inset-0 opacity-0 cursor-pointer z-20"
+                                        required
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -201,10 +242,12 @@ export default function NewPromptPage() {
                                 </div>
                                 <div className="aspect-[4/5] w-24 mx-auto bg-muted border border-border rounded-lg overflow-hidden relative">
                                     {afterPreview ? (
-                                        <img
+                                        <Image
                                             src={afterPreview}
                                             alt="Crop preview"
-                                            className="absolute inset-0 w-full h-full object-cover transition-all duration-300 shadow-2xl"
+                                            fill
+                                            sizes="96px"
+                                            className="object-cover transition-all duration-300 shadow-2xl"
                                             style={{ objectPosition: thumbnailPos }}
                                         />
                                     ) : (

@@ -3,9 +3,27 @@
 import { useState, useEffect, use } from "react";
 import { UploadCloud, Save, Image as ImageIcon, Loader2, Globe, Sparkles, Layout } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { updatePrompt, getAllCategories } from "@/actions/admin";
 import { getPromptById } from "@/actions/prompt";
+
+const MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
+type PromptForEdit = {
+    title: string;
+    tool: string;
+    categories?: { name: string }[];
+    promptText: string;
+    description?: string | null;
+    metaTitle?: string | null;
+    metaDescription?: string | null;
+    beforeImage: string;
+    afterImage: string;
+    thumbnailPos?: string | null;
+    status?: string | null;
+};
 
 export default function EditPromptPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -44,16 +62,17 @@ export default function EditPromptPage({ params }: { params: Promise<{ id: strin
                 setTitle(data.title);
                 setTools(data.tool ? data.tool.split(", ").filter(Boolean) : ["Gemini"]);
                 // Map multiple categories to comma separated string
-                const cats = (data as any).categories?.map((c: any) => c.name).join(", ") || "";
+                const promptData = data as PromptForEdit;
+                const cats = promptData.categories?.map((c) => c.name).join(", ") || "";
                 setCategoryName(cats);
-                setPromptText(data.promptText);
-                setDescription(data.description || "");
-                setMetaTitle(data.metaTitle || "");
-                setMetaDescription(data.metaDescription || "");
-                setBeforePreview(data.beforeImage);
-                setAfterPreview(data.afterImage);
-                setThumbnailPos((data as any).thumbnailPos || "center");
-                setStatus((data as any).status || "published");
+                setPromptText(promptData.promptText);
+                setDescription(promptData.description || "");
+                setMetaTitle(promptData.metaTitle || "");
+                setMetaDescription(promptData.metaDescription || "");
+                setBeforePreview(promptData.beforeImage);
+                setAfterPreview(promptData.afterImage);
+                setThumbnailPos(promptData.thumbnailPos || "center");
+                setStatus(promptData.status || "published");
                 setIsLoading(false);
             })
             .catch(err => {
@@ -65,6 +84,18 @@ export default function EditPromptPage({ params }: { params: Promise<{ id: strin
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: "before" | "after") => {
         const file = e.target.files?.[0];
         if (file) {
+            if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+                alert("Invalid file type. Only JPG, PNG, and WEBP are allowed.");
+                e.target.value = "";
+                return;
+            }
+
+            if (file.size > MAX_UPLOAD_SIZE_BYTES) {
+                alert("File too large. Maximum size is 5MB.");
+                e.target.value = "";
+                return;
+            }
+
             const previewUrl = URL.createObjectURL(file);
             if (type === "before") {
                 setBeforeFile(file);
@@ -83,10 +114,24 @@ export default function EditPromptPage({ params }: { params: Promise<{ id: strin
         const res = await fetch("/api/upload", {
             method: "POST",
             body: formData,
+            credentials: "include",
         });
 
-        if (!res.ok) throw new Error("Failed to upload image.");
-        const data = await res.json();
+        if (!res.ok) {
+            let message = "Failed to upload image.";
+            try {
+                const errorData = await res.json() as { error?: string };
+                if (errorData?.error) message = errorData.error;
+            } catch {
+                // Ignore malformed error JSON and keep default message.
+            }
+            throw new Error(message);
+        }
+
+        const data = await res.json() as { url?: string; error?: string };
+        if (!data.url) {
+            throw new Error(data.error || "Upload response did not include a URL.");
+        }
         return data.url;
     };
 
@@ -120,7 +165,7 @@ export default function EditPromptPage({ params }: { params: Promise<{ id: strin
             }
         } catch (error) {
             console.error("Submission failed", error);
-            alert("Update failed. Please try again.");
+            alert(error instanceof Error ? error.message : "Update failed. Please try again.");
             setIsSubmitting(false);
         }
     };
@@ -176,23 +221,33 @@ export default function EditPromptPage({ params }: { params: Promise<{ id: strin
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="relative aspect-square border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center text-center hover:bg-muted/30 transition-colors overflow-hidden group">
                                     {beforePreview ? (
-                                        <img src={beforePreview} alt="Before" className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform" />
+                                        <Image src={beforePreview} alt="Before" fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover opacity-60 group-hover:scale-105 transition-transform" />
                                     ) : null}
                                     <div className="relative z-10 flex flex-col items-center p-2 bg-black/20 rounded-lg backdrop-blur-sm">
                                         <UploadCloud size={20} className="text-white mb-1" />
                                         <span className="text-[9px] font-bold uppercase tracking-tighter text-white">Change Base</span>
                                     </div>
-                                    <input type="file" onChange={(e) => handleFileChange(e, "before")} className="absolute inset-0 opacity-0 cursor-pointer z-20" />
+                                    <input
+                                        type="file"
+                                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                                        onChange={(e) => handleFileChange(e, "before")}
+                                        className="absolute inset-0 opacity-0 cursor-pointer z-20"
+                                    />
                                 </div>
                                 <div className="relative aspect-square border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center text-center hover:bg-muted/30 transition-colors overflow-hidden group border-primary/20">
                                     {afterPreview ? (
-                                        <img src={afterPreview} alt="After" className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform" />
+                                        <Image src={afterPreview} alt="After" fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover opacity-60 group-hover:scale-105 transition-transform" />
                                     ) : null}
                                     <div className="relative z-10 flex flex-col items-center p-2 bg-primary/20 rounded-lg backdrop-blur-sm">
                                         <UploadCloud size={20} className="text-white mb-1" />
                                         <span className="text-[9px] font-bold uppercase tracking-tighter text-white">Change Result</span>
                                     </div>
-                                    <input type="file" onChange={(e) => handleFileChange(e, "after")} className="absolute inset-0 opacity-0 cursor-pointer z-20" />
+                                    <input
+                                        type="file"
+                                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                                        onChange={(e) => handleFileChange(e, "after")}
+                                        className="absolute inset-0 opacity-0 cursor-pointer z-20"
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -221,10 +276,12 @@ export default function EditPromptPage({ params }: { params: Promise<{ id: strin
                                 </div>
                                 <div className="aspect-[4/5] w-24 mx-auto bg-muted border border-border rounded-lg overflow-hidden relative shadow-inner">
                                     {afterPreview ? (
-                                        <img
+                                        <Image
                                             src={afterPreview}
                                             alt="Crop preview"
-                                            className="absolute inset-0 w-full h-full object-cover transition-all duration-300"
+                                            fill
+                                            sizes="96px"
+                                            className="object-cover transition-all duration-300"
                                             style={{ objectPosition: thumbnailPos }}
                                         />
                                     ) : (

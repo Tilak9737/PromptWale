@@ -69,7 +69,7 @@ export default async function AdminPromptsPage({
                                     </td>
                                 </tr>
                             ) : (
-                                prompts.map((prompt: any) => (
+                                prompts.map((prompt) => (
                                     <tr key={prompt.id} className="hover:bg-muted/20 transition-colors group">
                                         <td className="px-6 py-4">
                                             <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-border">
@@ -77,8 +77,9 @@ export default async function AdminPromptsPage({
                                                     src={prompt.afterImage}
                                                     alt="Thumbnail"
                                                     fill
+                                                    sizes="(max-width: 768px) 48px, 48px"
                                                     className="object-cover"
-                                                    style={{ objectPosition: (prompt as any).thumbnailPos || 'center' }}
+                                                    style={{ objectPosition: prompt.thumbnailPos || 'center' }}
                                                 />
                                             </div>
                                         </td>
@@ -88,8 +89,8 @@ export default async function AdminPromptsPage({
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex flex-wrap gap-1">
-                                                {prompt.categories?.length > 0 ? (
-                                                    prompt.categories.map((cat: any) => (
+                                                {prompt.categories && prompt.categories.length > 0 ? (
+                                                    prompt.categories.map((cat) => (
                                                         <span key={cat.id} className="px-2 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded-full text-[10px] font-bold uppercase tracking-wide">
                                                             {cat.name}
                                                         </span>

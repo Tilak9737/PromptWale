@@ -7,9 +7,10 @@ interface ComparisonSliderProps {
     beforeImage: string;
     afterImage: string;
     title: string;
+    thumbnailPos?: string;
 }
 
-export default function ComparisonSlider({ beforeImage, afterImage, title }: ComparisonSliderProps) {
+export default function ComparisonSlider({ beforeImage, afterImage, title, thumbnailPos }: ComparisonSliderProps) {
     const [sliderPos, setSliderPos] = useState(50);
     const [isResizing, setIsResizing] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -23,7 +24,7 @@ export default function ComparisonSlider({ beforeImage, afterImage, title }: Com
     };
 
     const handleMouseDown = () => setIsResizing(true);
-    const handleMouseUp = () => setIsResizing(false);
+
 
     const handleMouseMove = (e: MouseEvent) => {
         if (isResizing) handleMove(e.clientX);
@@ -61,6 +62,7 @@ export default function ComparisonSlider({ beforeImage, afterImage, title }: Com
                     sizes="(max-width: 768px) 100vw, 50vw"
                     priority
                     className="object-cover"
+                    style={{ objectPosition: thumbnailPos || "center" }}
                     draggable="false"
                     onDragStart={(e) => e.preventDefault()}
                 />
@@ -74,6 +76,7 @@ export default function ComparisonSlider({ beforeImage, afterImage, title }: Com
                     fill
                     sizes="(max-width: 768px) 100vw, 50vw"
                     className="object-cover"
+                    style={{ objectPosition: thumbnailPos || "center" }}
                     draggable="false"
                     onDragStart={(e) => e.preventDefault()}
                 />

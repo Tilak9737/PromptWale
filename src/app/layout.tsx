@@ -36,18 +36,13 @@ export const metadata: Metadata = {
   },
 };
 
-import { headers } from "next/headers";
-import MaintenanceCheck from "@/components/ui/MaintenanceCheck";
+
 
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const headerList = await headers();
-  const pathname = headerList.get("x-pathname") || "";
-  const isAdminPath = pathname.startsWith("/admin") || pathname.startsWith("/api");
-
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased bg-background text-foreground`}>
@@ -58,7 +53,6 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <div className="relative min-h-screen flex flex-col">
-            {!isAdminPath && <MaintenanceCheck />}
             {children}
           </div>
         </ThemeProvider>

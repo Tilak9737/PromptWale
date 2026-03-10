@@ -2,11 +2,25 @@ import { MetadataRoute } from 'next'
 import prisma from '@/lib/prisma'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-    // In a real production scenario, we would uncomment this to fetch dynamic routes:
-    // const prompts = await prisma.prompt.findMany({ select: { slug: true, updatedAt: true } })
-    // const promptUrls = prompts.map(p => ({ url: `https://promptwale.com/prompt/${p.slug}`, lastModified: p.updatedAt, changeFrequency: 'monthly', priority: 0.8 }))
-
     const baseUrl = 'https://promptwale.com'
+
+    // Fetch Prompts
+    const prompts = await prisma.prompt.findMany({ select: { slug: true, updatedAt: true } })
+    const promptUrls = prompts.map(p => ({
+        url: `${baseUrl}/prompt/${p.slug}`,
+        lastModified: p.updatedAt,
+        changeFrequency: 'monthly' as const,
+        priority: 0.8
+    }))
+
+    // Fetch Categories
+    const categories = await prisma.category.findMany({ select: { slug: true, updatedAt: true } })
+    const categoryUrls = categories.map(c => ({
+        url: `${baseUrl}/categories/${c.slug}`,
+        lastModified: c.updatedAt,
+        changeFrequency: 'weekly' as const,
+        priority: 0.9
+    }))
 
     return [
         {
@@ -27,5 +41,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             changeFrequency: 'always',
             priority: 0.9,
         },
+        ...categoryUrls,
+        ...promptUrls
     ]
 }

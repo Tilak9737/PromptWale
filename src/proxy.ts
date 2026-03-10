@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifyAuth } from "./lib/auth";
 
-export async function middleware(request: NextRequest) {
-    // Only protect routes inside /admin
+export async function proxy(request: NextRequest) {
     const path = request.nextUrl.pathname;
 
+    // Only protect routes inside /admin (except /admin/login)
     if (path.startsWith("/admin") && path !== "/admin/login") {
         const token = request.cookies.get("admin_token")?.value;
 
@@ -14,28 +14,19 @@ export async function middleware(request: NextRequest) {
         }
 
         try {
-            // Edge-compatible verification using jose
             const verifiedToken = await verifyAuth(token);
-
             if (!verifiedToken) {
                 return NextResponse.redirect(new URL("/admin/login", request.url));
             }
         } catch (error) {
-            console.error("Middleware auth catch:", error);
+            console.error("Middleware auth error:", error);
             return NextResponse.redirect(new URL("/admin/login", request.url));
         }
     }
 
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set("x-pathname", path);
-
-    return NextResponse.next({
-        request: {
-            headers: requestHeaders,
-        },
-    });
+    return NextResponse.next();
 }
 
 export const config = {
-    matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+    matcher: ["/admin/:path*"],
 };

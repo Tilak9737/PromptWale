@@ -18,12 +18,12 @@ export default async function TrendingPrompts() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {prompts.map((prompt: any) => (
+                        {prompts.map((prompt: { id: string; title: string; categories?: { name: string }[]; tool: string; beforeImage: string; afterImage: string; views: number; copies: number; slug: string; thumbnailPos?: string }) => (
                             <PromptCard
                                 key={prompt.id}
                                 id={prompt.id}
                                 title={prompt.title}
-                                category={prompt.categories?.map((c: any) => c.name).join(", ") || ""}
+                                category={prompt.categories?.map((c: { name: string }) => c.name).join(", ") || ""}
                                 tool={prompt.tool}
                                 beforeImage={prompt.beforeImage}
                                 afterImage={prompt.afterImage}

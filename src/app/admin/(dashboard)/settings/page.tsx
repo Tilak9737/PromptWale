@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Settings, Save, Globe, Lock, Bell, Palette, Database, Check, Shield, Zap, Loader2 } from "lucide-react";
-import { getSystemSettings, updateSystemSettings } from "@/actions/settings";
+import { getSystemSettings, updateSystemSettings, clearAppCache } from "@/actions/settings";
 import { updateAdminPassword } from "@/actions/admin";
 
 export default function AdminSettingsPage() {
@@ -29,6 +29,8 @@ export default function AdminSettingsPage() {
         getSystemSettings().then(settings => {
             setMaintenanceMode(settings.maintenanceMode);
             setSiteName(settings.siteName);
+            setBaseUrl(settings.baseUrl || "https://promptwale.com");
+            setAdminEmail(settings.adminEmail || "admin@promptwale.com");
             setIsLoading(false);
         });
     }, []);
@@ -38,6 +40,8 @@ export default function AdminSettingsPage() {
         const result = await updateSystemSettings({
             maintenanceMode,
             siteName,
+            baseUrl,
+            adminEmail,
         });
 
         if (result.success) {
@@ -53,7 +57,11 @@ export default function AdminSettingsPage() {
         if (newPassword !== confirmPassword) return alert("Passwords do not match!");
 
         setPassChanging(true);
-        const res = await updateAdminPassword({ currentPassword, newPassword });
+        const formData = new FormData();
+        formData.append("currentPassword", currentPassword);
+        formData.append("newPassword", newPassword);
+
+        const res = await updateAdminPassword(formData);
 
         if (res.success) {
             alert("Password updated successfully!");
@@ -67,9 +75,14 @@ export default function AdminSettingsPage() {
         setPassChanging(false);
     };
 
-    const handleClearCache = () => {
-        setCacheCleared(true);
-        setTimeout(() => setCacheCleared(false), 2000);
+    const handleClearCache = async () => {
+        const res = await clearAppCache();
+        if (res.success) {
+            setCacheCleared(true);
+            setTimeout(() => setCacheCleared(false), 2000);
+        } else {
+            alert("Failed to clear cache");
+        }
     };
 
     const tabs = [

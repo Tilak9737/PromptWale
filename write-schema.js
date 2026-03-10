@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require('fs');
 const path = require('path');
 
 const prismaDir = path.join(__dirname, 'prisma');
 if (!fs.existsSync(prismaDir)) {
-    fs.mkdirSync(prismaDir);
+  fs.mkdirSync(prismaDir);
 }
 
 const schema = `

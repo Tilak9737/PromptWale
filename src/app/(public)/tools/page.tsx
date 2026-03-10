@@ -12,7 +12,7 @@ const TOOLS = [
 
 export default function ToolsPage() {
     return (
-        <main className="min-h-screen flex flex-col pt-16">
+        <main className="min-h-screen flex flex-col">
             <Navbar />
             <div className="container mx-auto px-4 py-12 flex-1 max-w-7xl">
 

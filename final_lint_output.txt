@@ -1,0 +1,33 @@
+﻿
+> prompt-wale@0.1.0 lint
+> eslint
+
+
+C:\Users\Dell\.gemini\antigravity\scratch\PromptWale\prompt-wale\src\actions\admin.ts
+  4:23  warning  'verifyAuth' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Dell\.gemini\antigravity\scratch\PromptWale\prompt-wale\src\app\(public)\categories\[slug]\page.tsx
+  8:11  warning  'PromptWithCategory' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Dell\.gemini\antigravity\scratch\PromptWale\prompt-wale\src\app\admin\(dashboard)\page.tsx
+  140:41  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\Dell\.gemini\antigravity\scratch\PromptWale\prompt-wale\src\app\admin\(dashboard)\prompts\[id]\edit\page.tsx
+  179:41  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  189:41  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  224:41  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\Dell\.gemini\antigravity\scratch\PromptWale\prompt-wale\src\app\admin\(dashboard)\prompts\new\page.tsx
+  158:41  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  168:41  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  203:41  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\Dell\.gemini\antigravity\scratch\PromptWale\prompt-wale\src\app\admin\login\page.tsx
+  4:10  warning  'useRouter' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Dell\.gemini\antigravity\scratch\PromptWale\prompt-wale\src\lib\auth.ts
+  19:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+  48:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+Γ£û 12 problems (0 errors, 12 warnings)
+

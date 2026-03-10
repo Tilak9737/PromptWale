@@ -1,14 +1,14 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+
 
 // --- PROMPT FETCHING ACTIONS ---
 
 export async function getLatestPrompts(take = 8) {
     try {
         return await prisma.prompt.findMany({
-            where: { status: "published" } as any,
+            where: { status: "published" },
             take,
             orderBy: { createdAt: "desc" },
             include: { categories: true },
@@ -22,7 +22,7 @@ export async function getLatestPrompts(take = 8) {
 export async function getTrendingPrompts(take = 4) {
     try {
         return await prisma.prompt.findMany({
-            where: { status: "published" } as any,
+            where: { status: "published" },
             take,
             orderBy: [{ copies: "desc" }, { views: "desc" }],
             include: { categories: true },
@@ -35,8 +35,8 @@ export async function getTrendingPrompts(take = 4) {
 
 export async function getPromptBySlug(slug: string) {
     try {
-        return await prisma.prompt.findUnique({
-            where: { slug, status: "published" } as any,
+        return await prisma.prompt.findFirst({
+            where: { slug, status: "published" },
             include: { categories: true },
         });
     } catch (error) {
@@ -59,27 +59,56 @@ export async function getAllCategories() {
     }
 }
 
+import { Prisma } from "@prisma/client";
+
 export async function getCategoryBySlug(slug: string, tool?: string, sort?: string) {
     try {
-        let orderBy: any = { createdAt: "desc" };
+        let orderBy: Prisma.PromptOrderByWithRelationInput | Prisma.PromptOrderByWithRelationInput[] = { createdAt: "desc" };
         if (sort === "Most Copied") orderBy = { copies: "desc" };
         if (sort === "Trending") orderBy = [
             { copies: "desc" },
             { views: "desc" }
         ];
 
-        return await prisma.category.findUnique({
+        // Fetch category with all prompts to get unique tools
+        const categoryData = await prisma.category.findUnique({
             where: { slug },
+            include: {
+                prompts: {
+                    select: { tool: true }
+                }
+            }
+        });
+
+        if (!categoryData) return null;
+
+        const allTools = Array.from(new Set(
+            categoryData.prompts
+                .flatMap(p => p.tool.split(',').map(s => s.trim()))
+                .filter(Boolean)
+        ));
+
+        // Now fetch the filtered category data
+        const filteredCategory = await prisma.category.findUnique({
+            where: { id: categoryData.id },
             include: {
                 prompts: {
                     where: {
                         status: "published",
                         ...(tool ? { tool: { contains: tool, mode: "insensitive" } } : {})
-                    } as any,
+                    },
                     orderBy: orderBy,
+                    include: { categories: true }
                 },
             },
         });
+
+        if (!filteredCategory) return null;
+
+        return {
+            ...filteredCategory,
+            availableTools: allTools
+        };
     } catch (error) {
         console.error(`Failed to fetch category ${slug}:`, error);
         return null;
@@ -90,7 +119,7 @@ export async function getCategoryBySlug(slug: string, tool?: string, sort?: stri
 
 export async function searchPrompts(query: string, categorySlug?: string) {
     try {
-        const whereClause: any = {
+        const whereClause: Prisma.PromptWhereInput = {
             status: "published",
             OR: [
                 { title: { contains: query, mode: "insensitive" } },
@@ -168,7 +197,7 @@ export async function getRelatedPrompts(categoryId: string, currentPromptId: str
                 categories: { some: { id: categoryId } },
                 id: { not: currentPromptId },
                 status: "published"
-            } as any,
+            },
             take: limit,
             orderBy: [{ copies: "desc" }, { views: "desc" }],
             include: { categories: true }

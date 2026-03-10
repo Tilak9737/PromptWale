@@ -15,7 +15,7 @@ export default async function PopularCategories() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {categories.slice(0, 8).map((cat: any) => (
+                        {categories.slice(0, 8).map((cat: { id: string; slug: string; name: string; _count: { prompts: number } }) => (
                             <Link
                                 href={`/categories/${cat.slug}`}
                                 key={cat.id}

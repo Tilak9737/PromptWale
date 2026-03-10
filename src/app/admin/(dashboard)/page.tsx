@@ -1,7 +1,8 @@
-import { LayoutDashboard, Image as ImageIcon, Tags, Eye, Copy, TrendingUp } from "lucide-react";
+import { Image as ImageIcon, Tags, Eye, Copy, TrendingUp } from "lucide-react";
 import prisma from "@/lib/prisma";
 import EngagementChart from "@/components/admin/EngagementChart";
 import Link from "next/link";
+import Image from "next/image";
 
 export default async function AdminDashboard() {
     // Aggregate Analytics from PostgreSQL
@@ -109,7 +110,7 @@ export default async function AdminDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
                 {/* Placeholder for real charts later */}
-                <div className="col-span-2 bg-card border border-border/50 rounded-2xl p-6 shadow-sm flex flex-col">
+                <div className="col-span-2 bg-card border border-border/50 rounded-2xl p-6 shadow-sm flex flex-col min-w-0">
                     <div className="flex items-center justify-between mb-8">
                         <h2 className="text-lg font-bold flex items-center space-x-2">
                             <TrendingUp className="text-primary" size={20} />
@@ -120,7 +121,7 @@ export default async function AdminDashboard() {
                             <option>Last 30 Days</option>
                         </select>
                     </div>
-                    <div className="flex-1 border-2 border-dashed border-border/50 rounded-xl bg-card p-4 flex flex-col">
+                    <div className="flex-1 border-2 border-dashed border-border/50 rounded-xl bg-card p-4 flex flex-col min-w-0">
                         <EngagementChart data={chartData} />
                     </div>
                 </div>
@@ -134,15 +135,15 @@ export default async function AdminDashboard() {
                         {recentPrompts.length === 0 ? (
                             <div className="text-center text-muted-foreground text-sm py-8">No prompts created.</div>
                         ) : (
-                            recentPrompts.map((prompt: any) => (
+                            recentPrompts.map((prompt: { id: string; title: string; categories?: { name: string }[]; afterImage: string }) => (
                                 <div key={prompt.id} className="flex items-center space-x-4 group cursor-pointer hover:bg-muted/30 p-2 -mx-2 rounded-lg transition-colors">
                                     <div className="w-12 h-12 rounded-lg bg-muted border border-border/50 overflow-hidden relative">
-                                        <img src={prompt.afterImage} alt="Thumbnail" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+                                        <Image src={prompt.afterImage} alt="Thumbnail" fill sizes="(max-width: 768px) 48px, 48px" className="object-cover group-hover:scale-110 transition-transform" />
                                     </div>
                                     <div className="flex flex-col flex-1 overflow-hidden">
                                         <span className="text-sm font-bold truncate group-hover:text-primary transition-colors">{prompt.title}</span>
                                         <span className="text-xs text-muted-foreground truncate">
-                                            {prompt.categories?.map((c: any) => c.name).join(", ") || "Uncategorized"}
+                                            {prompt.categories?.map((c: { name: string }) => c.name).join(", ") || "Uncategorized"}
                                         </span>
                                     </div>
                                 </div>

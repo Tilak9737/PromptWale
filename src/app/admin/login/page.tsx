@@ -1,12 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Lock, LogIn, AlertCircle } from "lucide-react";
 import { loginAdmin } from "@/actions/admin";
 
 export default function AdminLoginPage() {
-    const router = useRouter();
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 

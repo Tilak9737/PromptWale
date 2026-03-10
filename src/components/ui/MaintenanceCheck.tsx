@@ -14,7 +14,7 @@ export default async function MaintenanceCheck() {
                     </div>
                     <h1 className="text-4xl font-black tracking-tighter">Under Maintenance</h1>
                     <p className="text-muted-foreground text-lg">
-                        PromptWale is currently undergoing scheduled maintenance. We'll be back online shortly with new features and improvements!
+                        PromptWale is currently undergoing scheduled maintenance. We&apos;ll be back online shortly with new features and improvements!
                     </p>
                     <div className="pt-4">
                         <Link

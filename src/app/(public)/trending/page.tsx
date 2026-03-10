@@ -1,13 +1,13 @@
 import Navbar from "@/components/layout/Navbar";
 import PromptCard from "@/components/ui/PromptCard";
 import { getTrendingPrompts } from "@/actions/prompt";
-import { Copy, TrendingUp } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 
 export default async function TrendingPage() {
     const prompts = await getTrendingPrompts();
 
     return (
-        <main className="min-h-screen flex flex-col pt-16">
+        <main className="min-h-screen flex flex-col">
             <Navbar />
             <div className="container mx-auto px-4 py-12 flex-1 max-w-7xl">
 
@@ -27,18 +27,19 @@ export default async function TrendingPage() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {prompts.map((prompt: any) => (
+                        {prompts.map((prompt: { id: string; title: string; categories?: { name: string }[]; tool: string; beforeImage: string; afterImage: string; views: number; copies: number; slug: string; thumbnailPos?: string }) => (
                             <PromptCard
                                 key={prompt.id}
                                 id={prompt.id}
                                 title={prompt.title}
-                                category={prompt.categories?.map((c: any) => c.name).join(", ") || "Uncategorized"}
+                                category={prompt.categories?.map((c: { name: string }) => c.name).join(", ") || "Uncategorized"}
                                 tool={prompt.tool}
                                 beforeImage={prompt.beforeImage}
                                 afterImage={prompt.afterImage}
                                 views={prompt.views}
                                 copies={prompt.copies}
                                 slug={prompt.slug}
+                                thumbnailPos={prompt.thumbnailPos}
                             />
                         ))}
                     </div>
