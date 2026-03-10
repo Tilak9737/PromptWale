@@ -1,0 +1,557 @@
+PromptWale Full QA Audit Report (Stability-First)
+Date: 2026-03-10
+Prepared for: PromptWale repository audit
+
+======================================================================
+1) Audit Metadata
+======================================================================
+
+Scope
+- Public user experience (homepage, search, categories, tools, prompt detail).
+- Admin panel experience (dashboard, prompts, categories, users, settings).
+- Core backend behavior (auth, server actions, upload endpoint, Prisma models).
+- Styling system and CSS architecture.
+- Performance and SEO readiness.
+
+Method
+- Static repository inspection (routes, actions, components, styles, schema).
+- Command evidence:
+  - `npm run lint` -> failed with 51 issues (33 errors, 18 warnings).
+  - `npm run build` -> successful after network access, with warnings:
+    - Deprecated middleware convention ("middleware" to "proxy").
+    - Recharts size warning (width/height should be > 0).
+- Compiled CSS inspection in `.next/static/chunks/*.css` to verify generated utilities.
+
+Constraints
+- This audit is code and build based (no browser-driven manual UX run).
+- No runtime API or schema mutation was implemented in this step.
+- Deliverable is documentation only.
+
+Severity / Effort Scale
+- Severity: `P0` (critical), `P1` (high), `P2` (medium), `P3` (low).
+- Effort: `S` (small), `M` (medium), `L` (large).
+
+======================================================================
+2) Route and Module Coverage Matrix
+======================================================================
+
+Routes
+
+| Surface | Route / Pattern | Source Entry | QA Status | Risk Snapshot |
+|---|---|---|---|---|
+| User | `/` | `src/app/page.tsx` + `src/components/home/*` | Audited | Depends on cards/search CTAs; nav search input is non-functional |
+| User | `/_not-found` | Next default (no custom file) | Audited | Acceptable baseline, no custom recovery UX |
+| User | `/trending` | `src/app/trending/page.tsx` | Audited | Uses prompt cards; no filter/sort controls |
+| User | `/search` | `src/app/search/page.tsx` | Audited | Debounced server action search; no pagination/facets API |
+| User | `/tools` | `src/app/tools/page.tsx` | Audited | Tool links route correctly; static catalog |
+| User | `/categories` | `src/app/categories/page.tsx` | Audited | Category listing works; no richer browse controls |
+| User | `/categories/[slug]` | `src/app/categories/[slug]/page.tsx` | Audited | Filter/sort UI rendered but not wired |
+| User | `/prompt/[slug]` | `src/app/prompt/[slug]/page.tsx` | Audited | Core prompt detail works; analytics fire-and-forget |
+| SEO | `/robots.txt` | `src/app/robots.ts` | Audited | Valid basic rules |
+| SEO | `/sitemap.xml` | `src/app/sitemap.ts` | Audited | Dynamic prompt/category URLs currently not included |
+| Admin | `/admin/login` | `src/app/admin/login/page.tsx` | Audited | Single-password auth model |
+| Admin | `/admin` | `src/app/admin/(dashboard)/page.tsx` | Audited | Dashboard functional but list actions partly dead |
+| Admin | `/admin/prompts` | `src/app/admin/(dashboard)/prompts/page.tsx` | Audited | CRUD available; no pagination |
+| Admin | `/admin/prompts/new` | `src/app/admin/(dashboard)/prompts/new/page.tsx` | Audited | Upload/create flow works; weak validation |
+| Admin | `/admin/prompts/[id]/edit` | `src/app/admin/(dashboard)/prompts/[id]/edit/page.tsx` | Audited | Edit flow works; weak validation |
+| Admin | `/admin/categories` | `src/app/admin/(dashboard)/categories/page.tsx` | Audited | CRUD list works; no pagination |
+| Admin | `/admin/categories/new` | `src/app/admin/(dashboard)/categories/new/page.tsx` | Audited | Create flow works |
+| Admin | `/admin/categories/[id]/edit` | `src/app/admin/(dashboard)/categories/[id]/edit/page.tsx` | Audited | Edit flow works |
+| Admin | `/admin/users` | `src/app/admin/(dashboard)/users/page.tsx` | Audited | Placeholder only |
+| Admin | `/admin/settings` | `src/app/admin/(dashboard)/settings/page.tsx` | Audited | Placeholder only |
+| API | `/api/upload` | `src/app/api/upload/route.ts` | Audited | Authed endpoint, but validation hardening needed |
+| Admin Guard | `/admin/:path*` | `src/middleware.ts` + `src/lib/auth.ts` | Audited | Works, but convention deprecated + weak secret fallback |
+
+Core modules audited
+- `src/actions/admin.ts`
+- `src/actions/prompt.ts`
+- `src/lib/auth.ts`
+- `src/lib/prisma.ts`
+- `prisma/schema.prisma`
+- `src/app/globals.css`
+- `src/components/layout/Navbar.tsx`
+- `src/components/ui/PromptCard.tsx`
+- `src/components/admin/EngagementChart.tsx`
+
+======================================================================
+3) Prioritized Bug Findings Backlog
+======================================================================
+
+P0-001 - Hardcoded auth fallbacks enable insecure production defaults
+- Severity: `P0`
+- Effort: `S`
+- Evidence:
+  - `src/lib/auth.ts` uses fallback JWT secret string in `getJwtSecretKey()`.
+  - `src/actions/admin.ts` uses fallback `ADMIN_PASSWORD` default (`"promptwale2024"`).
+- Impact:
+  - If env vars are missing/misconfigured, app can run with predictable credentials.
+  - Direct account compromise risk.
+- Repro:
+  1. Unset `JWT_SECRET` and `ADMIN_PASSWORD`.
+  2. Start app and authenticate with fallback password.
+- Fix recommendation:
+  - Remove all auth fallbacks.
+  - Fail fast at startup when required auth env vars are absent.
+  - Require strong secret entropy and minimum password policy.
+
+P0-002 - Admin server actions do not enforce auth at action boundary
+- Severity: `P0`
+- Effort: `M`
+- Evidence:
+  - `src/actions/admin.ts` (`createPrompt`, `updatePrompt`, `deletePrompt`, `createCategory`, `updateCategory`, `deleteCategory`) performs mutations with no `requireAdmin` check.
+- Impact:
+  - Route middleware is the only control; server actions themselves are not self-defending.
+  - Increases blast radius from action token leakage or future route reuse.
+- Repro:
+  1. Inspect action implementations and note direct Prisma mutation calls.
+  2. Confirm no centralized server-side role assertion before mutation.
+- Fix recommendation:
+  - Add `requireAdmin()` utility in every admin action.
+  - Validate token role in action context before touching DB.
+  - Return structured authorization errors for UI handling.
+
+P0-003 - Weak auth model (single shared password, no rate limit, no audit)
+- Severity: `P0`
+- Effort: `L`
+- Evidence:
+  - `src/app/admin/login/page.tsx` captures password only.
+  - `prisma/schema.prisma` contains `Admin` model but login flow does not use hashed per-user credentials.
+- Impact:
+  - No user-level accountability.
+  - Susceptible to brute force and credential sharing.
+- Repro:
+  1. Repeated login attempts are allowed without lockout.
+  2. No user identity or per-user trace exists in auth flow.
+- Fix recommendation:
+  - Migrate to account-based admin auth with hashed passwords (`bcrypt/argon2`).
+  - Add attempt throttling, lockout, and audit events.
+  - Implement session rotation and explicit logout invalidation.
+
+P1-101 - Upload endpoint missing strict file validation and safety limits
+- Severity: `P1`
+- Effort: `M`
+- Evidence:
+  - `src/app/api/upload/route.ts` trusts client-supplied filename extension.
+  - No MIME magic-byte verification, max size check, dimension constraints, or content scanning hook.
+- Impact:
+  - Risk of oversized uploads, invalid file types, and storage abuse.
+  - Operational and security risk.
+- Repro:
+  1. Submit large non-image file renamed with image extension.
+  2. Endpoint accepts and writes file to `public/uploads`.
+- Fix recommendation:
+  - Enforce allowlist (`image/jpeg`, `image/png`, `image/webp`).
+  - Validate file signature, max bytes, and optional dimension bounds.
+  - Reject files with clear structured error messages.
+  - Add rate limiting and upload quotas.
+
+P1-102 - Multiple visible controls are non-functional (dead UX)
+- Severity: `P1`
+- Effort: `M`
+- Evidence:
+  - Navbar search input has no navigation/search handler: `src/components/layout/Navbar.tsx`.
+  - Category filter/sort UI is present but not wired: `src/app/categories/[slug]/page.tsx`.
+  - Search "Advanced Filters" is a clickable label only: `src/app/search/page.tsx`.
+  - Admin "View All Prompts" button has no action: `src/app/admin/(dashboard)/page.tsx`.
+  - Admin "Save as Draft" has no behavior: `src/app/admin/(dashboard)/prompts/new/page.tsx`.
+  - Users/Settings are placeholders only.
+- Impact:
+  - Broken expectations, lower trust, lower conversion.
+- Repro:
+  1. Click each control above.
+  2. Observe no functional outcome.
+- Fix recommendation:
+  - Either wire full behavior or hide controls until ready.
+  - Add explicit "Coming in vNext" state only where roadmap placeholders are intentional.
+
+P1-103 - Deprecated Next.js middleware convention in use
+- Severity: `P1`
+- Effort: `S`
+- Evidence:
+  - Build output warning: middleware convention deprecated, use `proxy`.
+  - Current file: `src/middleware.ts`.
+- Impact:
+  - Future framework compatibility risk.
+- Repro:
+  1. Run `npm run build`.
+  2. Observe deprecation warning.
+- Fix recommendation:
+  - Migrate file convention to `src/proxy.ts` and keep matcher behavior equivalent.
+
+P1-104 - Lint baseline is failing (type safety + hook correctness + JSX escapes)
+- Severity: `P1`
+- Effort: `M`
+- Evidence:
+  - `npm run lint` -> 51 issues (33 errors, 18 warnings).
+  - Key classes:
+    - `no-explicit-any` across actions/pages/components.
+    - `react-hooks/set-state-in-effect` in navbar theme mount pattern.
+    - `react/no-unescaped-entities` in text nodes.
+- Impact:
+  - Reduced maintainability and release confidence.
+- Repro:
+  1. Run `npm run lint`.
+  2. Observe failing output.
+- Fix recommendation:
+  - Add strict typed DTOs for actions and view models.
+  - Replace problematic hook pattern with hydration-safe theme button strategy.
+  - Clean JSX entity escapes and enable CI lint gate.
+
+P1-105 - Missing semantic `card` token causes silent styling gaps
+- Severity: `P1`
+- Effort: `S`
+- Evidence:
+  - `src/app/globals.css` defines tokens for `background`, `foreground`, `primary`, `accent`, `muted`, `border`, etc., but no `card` token mapping.
+  - Codebase uses `bg-card` widely (`src/app/admin/*`, `src/components/ui/PromptCard.tsx`, others).
+  - Compiled CSS (`.next/static/chunks/*.css`) has no `.bg-card` utility rule.
+- Impact:
+  - Surfaces intended as cards can render without intended background color.
+  - Visual hierarchy inconsistency across user/admin screens.
+- Repro:
+  1. Inspect token definitions and utility generation.
+  2. Confirm `bg-card` utility missing in generated CSS.
+- Fix recommendation:
+  - Add semantic token family:
+    - `--card`, `--card-foreground`
+    - `--surface-1`, `--surface-2`
+  - Map into Tailwind theme tokens (`--color-card`, etc.).
+
+P2-201 - Tool is stored as comma-separated string (query/model fragility)
+- Severity: `P2`
+- Effort: `L`
+- Evidence:
+  - `createPrompt` stores `tool: tools.join(", ")` in `src/app/admin/(dashboard)/prompts/new/page.tsx`.
+  - Search relies on string `contains` in `src/actions/prompt.ts`.
+- Impact:
+  - Hard to index/filter accurately; inconsistent values possible.
+- Repro:
+  1. Save prompt with multiple tools.
+  2. Search/filter semantics depend on substring matching.
+- Fix recommendation:
+  - Normalize tools using enum table or relation table.
+  - Add deterministic filter API using structured tool IDs.
+
+P2-202 - Slug generation is collision-prone and non-deterministic
+- Severity: `P2`
+- Effort: `M`
+- Evidence:
+  - `src/actions/admin.ts` appends random `0-999` to sanitized title for slug.
+- Impact:
+  - Collision risk grows with scale.
+  - URL instability impacts SEO and editorial control.
+- Repro:
+  1. Create many prompts with same title.
+  2. Observe potential unique conflicts and random URL suffixes.
+- Fix recommendation:
+  - Deterministic slug pipeline with uniqueness resolver (`-2`, `-3`, ...).
+  - Keep canonical slug history if titles change.
+
+P2-203 - Analytics schema too thin for actionable product analytics
+- Severity: `P2`
+- Effort: `M`
+- Evidence:
+  - `prisma/schema.prisma` `Analytics` model only has `event`, `promptId`, `timestamp`.
+- Impact:
+  - Cannot analyze channel/source/session/device funnels.
+- Repro:
+  1. Attempt to answer "which page/source converts best for copy events".
+  2. Missing data dimensions prevent analysis.
+- Fix recommendation:
+  - Add dimensions: `sessionId`, `referrer`, `ua`, `ipHash`, `pagePath`, `tool`.
+  - Add retention/aggregation strategy.
+
+P2-204 - Admin list pages load full datasets with no pagination
+- Severity: `P2`
+- Effort: `M`
+- Evidence:
+  - `src/app/admin/(dashboard)/prompts/page.tsx` and `.../categories/page.tsx` use unbounded `findMany`.
+- Impact:
+  - Response times and memory usage degrade as data grows.
+- Repro:
+  1. Seed large prompt/category volume.
+  2. Observe heavy server render and table paint times.
+- Fix recommendation:
+  - Implement cursor or offset pagination.
+  - Select only rendered fields; lazy-load heavy data.
+
+P2-205 - Search architecture can overload DB and produce stale results races
+- Severity: `P2`
+- Effort: `M`
+- Evidence:
+  - `src/app/search/page.tsx` fires debounced action queries on text changes.
+  - No request cancellation, pagination, or total-count API contract.
+- Impact:
+  - Increased DB pressure, inconsistent result ordering under latency.
+- Repro:
+  1. Type quickly with unstable network/latency.
+  2. Observe potential stale result replacement.
+- Fix recommendation:
+  - Move to dedicated search API with abortable requests.
+  - Add pagination, deterministic ordering, and index-backed filtering.
+
+P2-206 - Admin still uses raw `<img>` elements in multiple views
+- Severity: `P2`
+- Effort: `S`
+- Evidence:
+  - Lint warnings in admin dashboard and prompt forms indicate `no-img-element`.
+- Impact:
+  - Missed image optimization (size selection, lazy loading, format handling).
+- Repro:
+  1. Run `npm run lint`.
+  2. Observe `@next/next/no-img-element` warnings.
+- Fix recommendation:
+  - Replace with `next/image` for all managed previews where feasible.
+
+P2-207 - Recharts layout warning indicates fragile chart container sizing
+- Severity: `P2`
+- Effort: `S`
+- Evidence:
+  - Build output warns chart width/height is invalid (`-1` case).
+  - Chart component: `src/components/admin/EngagementChart.tsx`.
+- Impact:
+  - Risk of runtime render glitches on certain layout states.
+- Repro:
+  1. Build app.
+  2. Observe Recharts size warning.
+- Fix recommendation:
+  - Ensure explicit min height and stable container dimensions.
+  - Add fallback render for zero-size containers.
+
+P2-208 - Sitemap currently omits dynamic prompt/category URLs
+- Severity: `P2`
+- Effort: `M`
+- Evidence:
+  - `src/app/sitemap.ts` has dynamic fetch logic commented out.
+- Impact:
+  - Incomplete crawl coverage and reduced organic discovery.
+- Repro:
+  1. Inspect generated sitemap.
+  2. Note absence of prompt/category detail URLs.
+- Fix recommendation:
+  - Enable dynamic URL generation with lastModified values.
+  - Add canonical consistency checks.
+
+P3-301 - Stylelint dependency exists without project configuration
+- Severity: `P3`
+- Effort: `S`
+- Evidence:
+  - Running `npx stylelint "src/**/*.css"` fails: no configuration provided.
+  - Stylelint packages present in `package.json`.
+- Impact:
+  - CSS quality toolchain exists but is non-operational.
+- Repro:
+  1. Run stylelint command.
+  2. Observe config error.
+- Fix recommendation:
+  - Add `.stylelintrc` and scripts.
+  - Integrate into CI alongside ESLint.
+
+======================================================================
+4) Admin Panel Improvement Backlog
+======================================================================
+
+Security and Access
+- `A-SEC-01` (P0, L): Replace shared password login with per-admin accounts + hashed passwords + role claims.
+- `A-SEC-02` (P1, M): Add rate limiting, lockout, and login attempt telemetry.
+- `A-SEC-03` (P1, M): Add CSRF strategy for mutation actions and upload endpoint.
+- `A-SEC-04` (P1, M): Add session management controls (session list + revoke all).
+
+Workflow and Content Operations
+- `A-WF-01` (P1, M): Prompt lifecycle states (`Draft`, `In Review`, `Published`, `Archived`).
+- `A-WF-02` (P1, M): Bulk actions for prompt/category tables (bulk category move, bulk delete with confirm).
+- `A-WF-03` (P2, S): Table utilities (sorting, filtering, persisted column visibility).
+- `A-WF-04` (P2, M): Safe destructive actions (typed confirmation + dependency preview).
+
+Data Governance
+- `A-DATA-01` (P1, M): Central schema validation (Zod or equivalent) for all admin actions.
+- `A-DATA-02` (P2, M): Soft delete + restore pipeline for prompts/categories.
+- `A-DATA-03` (P2, M): Slug governance (canonical slug, redirect history on changes).
+- `A-DATA-04` (P2, M): Data quality dashboard (missing metadata, broken images, duplicate titles).
+
+Ops Visibility
+- `A-OPS-01` (P1, M): Central error monitoring and alerting (action failures, upload failures, auth anomalies).
+- `A-OPS-02` (P2, M): Audit logs for all admin writes (who, what, when, before/after).
+- `A-OPS-03` (P2, S): Background job health panel (revalidation, queue events, failure counts).
+
+======================================================================
+5) User-Side Feature Improvement Backlog
+======================================================================
+
+Discovery and Search
+- `U-DISC-01` (P1, M): Functional global search in navbar with submit + route transition.
+- `U-DISC-02` (P1, M): Real advanced filters (tool, category, popularity window, sort).
+- `U-DISC-03` (P2, M): Pagination/infinite scroll with stable query params.
+- `U-DISC-04` (P2, M): Related prompts and "users also copied" recommendations.
+
+Engagement and Conversion
+- `U-ENG-01` (P1, S): Fully wired copy/share feedback states with retry/error messaging.
+- `U-ENG-02` (P2, M): Prompt comparison slider for before/after view.
+- `U-ENG-03` (P2, M): Save collections/favorites (session-based now, account-based later).
+- `U-ENG-04` (P2, M): Tool landing pages with usage stats and curated starter packs.
+
+Trust and Content Quality
+- `U-TRUST-01` (P2, S): Show prompt freshness ("updated X days ago") and quality badges.
+- `U-TRUST-02` (P2, M): Report content issue flow (broken image, unsafe prompt, duplicate).
+- `U-TRUST-03` (P2, M): Rich prompt metadata blocks (difficulty, expected output style, recommended settings).
+
+======================================================================
+6) CSS / UI Top-Tier Upgrade Blueprint
+======================================================================
+
+Design Token Standard (must implement first)
+- Add complete semantic token set:
+  - Surfaces: `--background`, `--card`, `--surface-1`, `--surface-2`
+  - Text: `--foreground`, `--card-foreground`, `--muted-foreground`
+  - Actions: `--primary`, `--secondary`, `--accent`
+  - Status: `--success`, `--warning`, `--danger`, `--info`
+  - Focus: `--focus-ring`, `--focus-ring-offset`
+  - Borders: `--border`, `--border-strong`, `--input`
+- Map to Tailwind v4 theme aliases (`--color-card`, `--color-success`, etc.).
+
+Component State Matrix (enforce consistently)
+- Required states on all interactive controls:
+  - `default`, `hover`, `active`, `focus-visible`, `disabled`, `loading`, `error`.
+- Add shared utility classes for:
+  - Focus outlines with AA contrast.
+  - Disabled opacity and pointer policy.
+  - Loading skeleton + spinner placement standard.
+
+Typography and Spacing System
+- Establish type scale and semantic role mapping:
+  - Display, section title, body, caption, helper text.
+- Set spacing rhythm with tokenized spacing and max content widths.
+- Normalize card/table/form density for admin readability.
+
+Responsive and Layout Upgrades
+- Build mobile admin navigation (current sidebar hidden on small screens with limited fallback).
+- Convert data tables to responsive card/table hybrid for narrow viewports.
+- Ensure sticky headers and action bars do not occlude controls on small screens.
+
+Accessibility Baseline
+- Contrast audit target: WCAG AA for text and interactive states.
+- Keyboard-first flow:
+  - logical tab order
+  - visible focus ring
+  - escape/close behavior for overlays
+- Add reduced-motion support for animated transitions (`prefers-reduced-motion`).
+- Ensure ARIA labels for icon-only controls and state announcements.
+
+======================================================================
+7) Performance and SEO Optimization Plan
+======================================================================
+
+Frontend Performance
+- `O-FE-01` (P1, M): Replace raw `<img>` with `next/image` where applicable, include `sizes`.
+- `O-FE-02` (P2, M): Add route-level skeleton/loading strategies for perceived performance.
+- `O-FE-03` (P2, M): Reduce hydration cost in interactive pages (search/admin forms).
+
+Backend and Query Efficiency
+- `O-BE-01` (P1, M): Add pagination and selective fields for admin listings.
+- `O-BE-02` (P2, M): Add DB indexes for high-frequency search/order fields.
+- `O-BE-03` (P2, M): Refactor analytics writes for throughput (batching or queue if needed).
+
+Media and Upload Policy
+- `O-MEDIA-01` (P1, M): Enforce file size/type/dimension limits and reject policy.
+- `O-MEDIA-02` (P2, M): Auto-derive thumbnails and modern formats (`webp/avif` where possible).
+- `O-MEDIA-03` (P2, M): Add storage lifecycle policy and orphan cleanup job.
+
+Caching and Revalidation
+- `O-CACHE-01` (P2, M): Move from broad path revalidation to tag-based invalidation.
+- `O-CACHE-02` (P2, S): Cache safe read-heavy query outputs with bounded staleness.
+
+Search Scalability
+- `O-SEARCH-01` (P1, M): Introduce dedicated search endpoint contract:
+  - Query params: `q`, `tool[]`, `category`, `sort`, `page`, `limit`
+  - Response: `items`, `total`, `page`, `hasNext`
+- `O-SEARCH-02` (P2, M): Add cancellation handling and stale-result protection client-side.
+
+SEO Improvements
+- `O-SEO-01` (P1, M): Implement route-level dynamic metadata (`generateMetadata`) for prompt/category pages.
+- `O-SEO-02` (P2, M): Generate full dynamic sitemap (prompts + categories + tools pages).
+- `O-SEO-03` (P2, S): Enforce canonical URLs and consistent OG/Twitter cards per detail page.
+- `O-SEO-04` (P2, S): Add structured data (`BreadcrumbList`, `Article`/`CreativeWork` style metadata).
+
+======================================================================
+8) 3-Phase Execution Roadmap
+======================================================================
+
+Phase 1 - Stability and Security (Priority: highest)
+Target: 2-3 weeks
+Goals
+- Close all `P0` items.
+- Close highest-risk `P1` issues blocking safe operation.
+Work packages
+- Remove auth fallbacks; enforce mandatory env validation.
+- Add `requireAdmin()` checks to every admin mutation action.
+- Harden upload validation and limits.
+- Wire/remove dead controls to avoid false affordances.
+- Migrate `middleware` convention to `proxy`.
+- Reduce lint errors to zero and critical warnings to zero.
+- Add missing semantic token set (`card`, status, focus) and regenerate CSS baseline.
+Exit criteria
+- Security review passes for auth and uploads.
+- `npm run lint` passes.
+- `npm run build` has no critical warnings.
+
+Phase 2 - UX and Design Uplift
+Target: 2-4 weeks
+Goals
+- Deliver polished, consistent user/admin experiences.
+Work packages
+- Implement full design-token architecture and state matrix.
+- Build functional search/filter/sort experiences.
+- Improve admin responsive behavior and table ergonomics.
+- Add accessibility baseline (focus, contrast, reduced motion, labels).
+Exit criteria
+- UX acceptance checks pass on desktop/mobile breakpoints.
+- Accessibility smoke checks pass for keyboard navigation and contrast.
+
+Phase 3 - Growth, Scalability, and Intelligence
+Target: 3-5 weeks
+Goals
+- Improve organic growth and scalability of discovery surfaces.
+Work packages
+- Introduce scalable search API and indexing.
+- Implement dynamic sitemap + metadata depth.
+- Expand analytics schema and reporting utility.
+- Add recommendation modules and richer content trust signals.
+Exit criteria
+- Search remains performant under larger dataset.
+- SEO coverage includes all major content routes.
+- Product analytics can answer channel/funnel questions.
+
+======================================================================
+9) Validation and Acceptance Checklist
+======================================================================
+
+Report-level checks
+- Every discovered route is represented in coverage.
+- Both user and admin surfaces have dedicated findings and recommendations.
+- Every bug entry includes severity, effort, evidence path, impact, repro, and fix guidance.
+- All `P0/P1` findings are mapped to Phase 1.
+- Every major recommendation has implementation direction and effort estimate.
+
+Engineering handoff checks
+- Backlog IDs are implementation-ready and can be split into tickets.
+- No runtime API/schema changes are assumed in this document step.
+- Dependencies and prerequisites are explicit for security-sensitive work.
+
+======================================================================
+10) Public APIs / Interfaces / Types
+======================================================================
+
+- No runtime API/interface/type changes were implemented in this step.
+- Deliverable is one documentation artifact: `QA_AUDIT_REPORT.txt`.
+- This report is the QA contract for subsequent engineering tickets.
+
+======================================================================
+11) Assumptions and Defaults
+======================================================================
+
+- Depth: comprehensive audit.
+- Format: single backlog-style text file.
+- Priority order: stability first.
+- Language: English.
+- Evidence basis: repository inspection + lint/build outputs.
+- Browser-driven exploratory testing is intentionally out of scope for this pass.
+

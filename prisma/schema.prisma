@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Prompt {
+  id              String     @id @default(cuid())
+  title           String
+  slug            String     @unique
+  promptText      String     @db.Text
+  description     String?    @db.Text
+  beforeImage     String
+  afterImage      String
+  tool            String     // e.g., Gemini, Nano Banana, Nano Banana Pro
+  categories      Category[]
+  instructions    String?    @db.Text
+  isTrending      Boolean    @default(false)
+  isFeatured      Boolean    @default(false)
+  status          String     @default("published") // Draft, Published, Archived
+  views           Int        @default(0)
+  copies          Int        @default(0)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  metaTitle       String?
+  metaDescription String?
+  thumbnailPos    String     @default("center") // top, center, bottom
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?  @db.Text
+  prompts     Prompt[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Admin {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String   // Hashed
+  createdAt DateTime @default(now())
+}
+
+model Analytics {
+  id        String   @id @default(cuid())
+  event     String   // "view", "copy", "share"
+  promptId  String?
+  timestamp DateTime @default(now())
+}
+
+model SystemSettings {
+  id              String   @id @default("global")
+  maintenanceMode Boolean  @default(false)
+  siteName        String   @default("PromptWale")
+  updatedAt       DateTime @updatedAt
+}
