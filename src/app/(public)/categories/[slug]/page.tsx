@@ -4,13 +4,13 @@ import { getCategoryBySlug } from "@/actions/prompt";
 import { notFound } from "next/navigation";
 import CategorySort from "@/components/category/CategorySort";
 import CategoryToolFilter from "@/components/category/CategoryToolFilter";
-import { Metadata } from 'next';
+import { Metadata } from "next";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
     const { slug } = await params;
     const categoryData = await getCategoryBySlug(slug);
 
-    if (!categoryData) return { title: 'Category Not Found' };
+    if (!categoryData) return { title: "Category Not Found" };
 
     const title = `${categoryData.name} AI Prompts | ${categoryData.prompts.length} Prompts | PromptWale`;
     const description = categoryData.description || `Browse a curated collection of high-quality AI prompts in the ${categoryData.name} category. Enhance your creativity with PromptWale.`;
@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         openGraph: {
             title,
             description,
-        }
+        },
     };
 }
 
@@ -38,14 +38,12 @@ interface PromptWithCategory {
     category?: { name: string };
 }
 
-
-
 export default async function CategoryDetailPage({
     params,
-    searchParams
+    searchParams,
 }: {
-    params: Promise<{ slug: string }>,
-    searchParams: Promise<{ tool?: string, sort?: string }>
+    params: Promise<{ slug: string }>;
+    searchParams: Promise<{ tool?: string; sort?: string }>;
 }) {
     const { slug } = await params;
     const { tool, sort } = await searchParams;
@@ -59,51 +57,50 @@ export default async function CategoryDetailPage({
     const typedPrompts = prompts as PromptWithCategory[];
 
     return (
-        <main className="min-h-screen flex flex-col">
+        <main className="page-fade-in flex min-h-screen flex-col">
             <Navbar />
-            <div className="container mx-auto px-4 py-12 flex-1">
+            <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
+                <section className="section-shell clay-soft">
+                    <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+                        <div>
+                            <h1 className="mb-2 text-4xl font-extrabold tracking-tight md:text-5xl">{name}</h1>
+                            <p className="text-base text-muted-foreground sm:text-lg">
+                                {description || "Explore top-rated prompts for this style."}
+                            </p>
+                        </div>
 
-                {/* Category Header */}
-                <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 border-b border-border/50 pb-8">
-                    <div>
-                        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-2">
-                            {name}
-                        </h1>
-                        <p className="text-muted-foreground text-lg">
-                            {description || "Explore top-rated prompts for this style."}
-                        </p>
+                        <div className="mt-2 flex flex-wrap items-center gap-3 md:mt-0">
+                            <CategoryToolFilter tools={availableTools} currentTool={tool} />
+                            <CategorySort currentSort={sort || "Newest First"} />
+                        </div>
                     </div>
+                </section>
 
-                    <div className="mt-6 md:mt-0 flex items-center space-x-4">
-                        <CategoryToolFilter tools={availableTools} currentTool={tool} />
-                        <CategorySort currentSort={sort || "Newest First"} />
-                    </div>
-                </div>
-
-                {/* Prompt Grid */}
-                {prompts.length === 0 ? (
-                    <div className="h-64 flex items-center justify-center border-2 border-dashed border-border/50 rounded-3xl text-muted-foreground text-lg font-medium">
-                        No prompts available in this category yet.
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {typedPrompts.map((prompt) => (
-                            <PromptCard
-                                key={prompt.id}
-                                id={prompt.id}
-                                title={prompt.title}
-                                category={name}
-                                tool={prompt.tool}
-                                beforeImage={prompt.beforeImage}
-                                afterImage={prompt.afterImage}
-                                views={prompt.views}
-                                copies={prompt.copies}
-                                slug={prompt.slug}
-                                thumbnailPos={prompt.thumbnailPos}
-                            />
-                        ))}
-                    </div>
-                )}
+                <section className="section-shell clay-soft">
+                    {prompts.length === 0 ? (
+                        <div className="clay-inset flex h-64 items-center justify-center rounded-3xl text-center text-lg font-medium text-muted-foreground">
+                            No prompts available in this category yet.
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                            {typedPrompts.map((prompt) => (
+                                <PromptCard
+                                    key={prompt.id}
+                                    id={prompt.id}
+                                    title={prompt.title}
+                                    category={name}
+                                    tool={prompt.tool}
+                                    beforeImage={prompt.beforeImage}
+                                    afterImage={prompt.afterImage}
+                                    views={prompt.views}
+                                    copies={prompt.copies}
+                                    slug={prompt.slug}
+                                    thumbnailPos={prompt.thumbnailPos}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </section>
             </div>
         </main>
     );

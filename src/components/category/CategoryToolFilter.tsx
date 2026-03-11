@@ -25,7 +25,7 @@ export default function CategoryToolFilter({ tools, currentTool }: { tools: stri
         <div className="relative">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className={`flex items-center space-x-2 px-4 py-2 border border-border rounded-full hover:bg-muted transition-colors text-sm font-medium ${currentTool ? 'bg-primary/10 border-primary/30 text-primary' : ''}`}
+                className={`clay-soft flex items-center space-x-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${currentTool ? "border-primary/30 bg-primary/10 text-primary" : ""}`}
             >
                 <Filter size={16} />
                 <span>{currentTool || "All Tools"}</span>
@@ -34,10 +34,10 @@ export default function CategoryToolFilter({ tools, currentTool }: { tools: stri
             {isOpen && (
                 <>
                     <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-                    <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-2xl shadow-xl z-50 p-2 overflow-hidden">
+                    <div className="clay absolute right-0 z-50 mt-2 w-48 overflow-hidden rounded-2xl p-2">
                         <button
                             onClick={() => handleToolSelect(null)}
-                            className={`w-full text-left px-4 py-2 text-sm rounded-xl hover:bg-muted transition-colors ${!currentTool ? 'font-bold text-primary' : ''}`}
+                            className={`w-full rounded-xl px-4 py-2 text-left text-sm transition-colors hover:bg-muted/45 ${!currentTool ? "font-bold text-primary" : ""}`}
                         >
                             All Tools
                         </button>
@@ -45,7 +45,7 @@ export default function CategoryToolFilter({ tools, currentTool }: { tools: stri
                             <button
                                 key={tool}
                                 onClick={() => handleToolSelect(tool)}
-                                className={`w-full text-left px-4 py-2 text-sm rounded-xl hover:bg-muted transition-colors ${currentTool === tool ? 'font-bold text-primary' : ''}`}
+                                className={`w-full rounded-xl px-4 py-2 text-left text-sm transition-colors hover:bg-muted/45 ${currentTool === tool ? "font-bold text-primary" : ""}`}
                             >
                                 {tool}
                             </button>

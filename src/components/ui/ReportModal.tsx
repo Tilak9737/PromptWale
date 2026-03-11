@@ -48,7 +48,7 @@ export default function ReportModal({ promptId }: { promptId: string }) {
         <>
             <button
                 onClick={() => setIsOpen(true)}
-                className="flex items-center space-x-2 text-xs text-muted-foreground hover:text-destructive transition-colors mt-6"
+                className="mt-6 flex items-center space-x-2 text-xs text-muted-foreground transition-colors hover:text-destructive"
             >
                 <Flag size={14} />
                 <span>Report an issue</span>
@@ -58,15 +58,15 @@ export default function ReportModal({ promptId }: { promptId: string }) {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="report-modal-title">
                     <div className="absolute inset-0 bg-background/80 backdrop-blur-sm transition-opacity duration-300" onClick={() => setIsOpen(false)} />
 
-                    <div className="relative bg-card border border-border w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-bottom-4 duration-300 ease-out">
-                        <div className="p-6 border-b border-border/50 flex items-center justify-between bg-muted/20">
+                    <div className="clay relative w-full max-w-md overflow-hidden rounded-[2rem] animate-in fade-in zoom-in-95 slide-in-from-bottom-4 duration-300 ease-out">
+                        <div className="flex items-center justify-between border-b border-border/60 p-6">
                             <h3 id="report-modal-title" className="text-xl font-bold flex items-center space-x-2">
                                 <AlertTriangle className="text-orange-500" size={20} />
                                 <span>Report an Issue</span>
                             </h3>
                             <button
                                 onClick={() => setIsOpen(false)}
-                                className="p-2 hover:bg-muted rounded-full transition-colors active:scale-95"
+                                className="clay-soft rounded-full p-2 transition-colors active:scale-95"
                                 aria-label="Close modal"
                             >
                                 <X size={20} />
@@ -76,7 +76,7 @@ export default function ReportModal({ promptId }: { promptId: string }) {
                         <div className="p-6">
                             {isSubmitted ? (
                                 <div className="py-10 text-center space-y-4 animate-in fade-in zoom-in-95 duration-300">
-                                    <div className="w-20 h-20 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <div className="mx-auto mb-2 flex h-20 w-20 items-center justify-center rounded-full bg-green-500/10 text-green-500">
                                         <CheckCircle2 size={40} />
                                     </div>
                                     <div>
@@ -96,7 +96,7 @@ export default function ReportModal({ promptId }: { promptId: string }) {
                                                     key={r}
                                                     className={`group relative flex items-center space-x-3 p-4 rounded-2xl border-2 transition-all cursor-pointer ${reason === r
                                                         ? "bg-primary/5 border-primary text-primary shadow-sm"
-                                                        : "bg-muted/30 border-transparent hover:border-border hover:bg-muted/50"
+                                                        : "clay-soft border-transparent hover:border-border"
                                                         }`}
                                                 >
                                                     <input
@@ -121,7 +121,7 @@ export default function ReportModal({ promptId }: { promptId: string }) {
                                         <textarea
                                             name="details"
                                             placeholder="Tell us more about the issue..."
-                                            className="w-full bg-muted/30 border-2 border-transparent rounded-2xl p-4 text-sm min-h-[120px] focus:outline-none focus:border-primary/30 focus:bg-background transition-all resize-none"
+                                            className="clay-inset min-h-[120px] w-full resize-none rounded-2xl p-4 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/30"
                                         />
                                     </div>
 
@@ -135,7 +135,7 @@ export default function ReportModal({ promptId }: { promptId: string }) {
                                     <button
                                         type="submit"
                                         disabled={!reason || isSubmitting}
-                                        className="w-full py-4 bg-primary text-primary-foreground font-black text-lg rounded-2xl shadow-xl shadow-primary/20 disabled:opacity-50 disabled:shadow-none hover:shadow-primary/30 hover:-translate-y-0.5 transition-all active:scale-[0.98] flex items-center justify-center"
+                                        className="clay flex w-full items-center justify-center rounded-2xl py-4 text-lg font-black text-primary transition-all hover:-translate-y-0.5 disabled:opacity-50"
                                     >
                                         {isSubmitting ? (
                                             <Loader2 className="animate-spin" size={24} />

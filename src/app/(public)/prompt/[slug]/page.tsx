@@ -9,13 +9,13 @@ import ShareButton from "@/components/ui/ShareButton";
 import ComparisonSlider from "@/components/ui/ComparisonSlider";
 import PromptCard from "@/components/ui/PromptCard";
 import ReportModal from "@/components/ui/ReportModal";
-import { Metadata } from 'next';
+import { Metadata } from "next";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
     const { slug } = await params;
     const prompt = await getPromptBySlug(slug);
 
-    if (!prompt) return { title: 'Prompt Not Found' };
+    if (!prompt) return { title: "Prompt Not Found" };
 
     const title = prompt.metaTitle || `${prompt.title} | AI Prompt for ${prompt.tool} | PromptWale`;
     const categoryName = prompt.categories?.[0]?.name || "AI Prompt";
@@ -28,10 +28,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
             title,
             description,
             images: [prompt.afterImage],
-            type: 'article',
+            type: "article",
         },
         twitter: {
-            card: 'summary_large_image',
+            card: "summary_large_image",
             title,
             description,
             images: [prompt.afterImage],
@@ -47,39 +47,36 @@ export default async function PromptPage({ params }: { params: Promise<{ slug: s
         return notFound();
     }
 
-    // Track view asynchronously
     trackPromptView(prompt.id);
 
     const firstCategoryId = prompt.categories?.[0]?.id || "";
-
-    // Fetch related prompts
     const relatedPrompts = firstCategoryId ? await getRelatedPrompts(firstCategoryId, prompt.id) : [];
 
     const jsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'CreativeWork',
+        "@context": "https://schema.org",
+        "@type": "CreativeWork",
         name: prompt.title,
         description: prompt.description || prompt.metaDescription || "",
         image: prompt.afterImage,
         genre: prompt.categories?.[0]?.name || "AI Prompt",
         publisher: {
-            '@type': 'Organization',
-            name: 'PromptWale',
+            "@type": "Organization",
+            name: "PromptWale",
             logo: {
-                '@type': 'ImageObject',
-                url: 'https://promptwale.com/logo.png'
-            }
+                "@type": "ImageObject",
+                url: "https://promptwale.com/logo.png",
+            },
         },
         offers: {
-            '@type': 'Offer',
-            price: '0',
-            priceCurrency: 'USD',
-            availability: 'https://schema.org/InStock'
-        }
+            "@type": "Offer",
+            price: "0",
+            priceCurrency: "USD",
+            availability: "https://schema.org/InStock",
+        },
     };
 
     return (
-        <div className="flex flex-col min-h-screen">
+        <div className="page-fade-in flex min-h-screen flex-col">
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -87,174 +84,169 @@ export default async function PromptPage({ params }: { params: Promise<{ slug: s
             <Navbar />
 
             <main className="flex-1">
-                <div className="container mx-auto px-4 py-8 max-w-6xl">
-                    {/* Breadcrumb */}
-                    <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-8">
-                        <Link href="/" className="hover:text-primary transition-colors">Home</Link>
-                        <CornerDownRight size={14} />
-                        {prompt.categories?.map((cat, i: number) => (
-                            <div key={cat.id} className="flex items-center space-x-2">
-                                <Link href={`/categories/${cat.slug}`} className="hover:text-primary transition-colors">{cat.name}</Link>
-                                {i < prompt.categories.length - 1 && <span className="opacity-50">,</span>}
-                            </div>
-                        ))}
-                        <CornerDownRight size={14} />
-                        <span className="text-foreground font-medium truncate">{prompt.title}</span>
-                    </nav>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-20">
-                        {/* Interactive Comparison Slider */}
-                        <div className="space-y-6">
-                            <ComparisonSlider
-                                beforeImage={prompt.beforeImage}
-                                afterImage={prompt.afterImage}
-                                title={prompt.title}
-                                thumbnailPos={prompt.thumbnailPos}
-                            />
-
-                            <div className="grid grid-cols-3 gap-4">
-                                <div className="col-span-1 relative aspect-square rounded-2xl overflow-hidden border border-border/50 group cursor-pointer shadow-sm">
-                                    <Image
-                                        src={prompt.beforeImage}
-                                        alt="Base Image"
-                                        fill
-                                        sizes="100px"
-                                        className="object-cover transition-transform group-hover:scale-110"
-                                        style={{ objectPosition: prompt.thumbnailPos || "center" }}
-                                    />
-                                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-white font-bold text-[10px] uppercase opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
-                                        Original
-                                    </div>
+                <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
+                    <section className="section-shell clay-soft">
+                        <nav className="mb-6 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                            <Link href="/" className="transition-colors hover:text-primary">Home</Link>
+                            <CornerDownRight size={14} />
+                            {prompt.categories?.map((cat, i: number) => (
+                                <div key={cat.id} className="flex items-center gap-2">
+                                    <Link href={`/categories/${cat.slug}`} className="transition-colors hover:text-primary">{cat.name}</Link>
+                                    {i < prompt.categories.length - 1 && <span className="opacity-50">,</span>}
                                 </div>
-                                <div className="col-span-1 relative aspect-square rounded-2xl overflow-hidden border border-border/50 group cursor-pointer shadow-sm">
-                                    <Image
-                                        src={prompt.afterImage}
-                                        alt="Result Image"
-                                        fill
-                                        sizes="100px"
-                                        className="object-cover transition-transform group-hover:scale-110"
-                                        style={{ objectPosition: prompt.thumbnailPos || "center" }}
-                                    />
-                                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-white font-bold text-[10px] uppercase opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
-                                        Result
+                            ))}
+                            <CornerDownRight size={14} />
+                            <span className="max-w-[240px] truncate font-medium text-foreground sm:max-w-none">{prompt.title}</span>
+                        </nav>
+
+                        <div className="grid grid-cols-1 gap-8 xl:grid-cols-[1fr_1.05fr]">
+                            <div className="space-y-5">
+                                <ComparisonSlider
+                                    beforeImage={prompt.beforeImage}
+                                    afterImage={prompt.afterImage}
+                                    title={prompt.title}
+                                    thumbnailPos={prompt.thumbnailPos}
+                                />
+
+                                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                                    <div className="clay-soft group relative aspect-square cursor-pointer overflow-hidden rounded-2xl">
+                                        <Image
+                                            src={prompt.beforeImage}
+                                            alt="Base Image"
+                                            fill
+                                            sizes="120px"
+                                            className="object-cover transition-transform group-hover:scale-110"
+                                            style={{ objectPosition: prompt.thumbnailPos || "center" }}
+                                        />
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-[10px] font-bold uppercase text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
+                                            Original
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Details Section */}
-                        <div className="flex flex-col">
-                            <div className="flex flex-wrap items-center gap-2 mb-4">
-                                {prompt.categories?.map((cat) => (
-                                    <span key={cat.id} className="px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full text-[10px] font-bold uppercase tracking-widest">
-                                        {cat.name}
-                                    </span>
-                                ))}
-                                {prompt.isTrending && (
-                                    <span className="px-3 py-1 bg-orange-500/10 text-orange-500 border border-orange-500/20 rounded-full text-[10px] font-bold uppercase tracking-widest">
-                                        🔥 Trending
-                                    </span>
-                                )}
-                            </div>
-
-                            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">{prompt.title}</h1>
-
-                            <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-                                {prompt.description || "A powerful AI prompt designed for stunning visual results."}
-                            </p>
-
-                            <div className="flex items-center space-x-6 mb-10 pb-10 border-b border-border">
-                                <div className="flex flex-wrap gap-3 items-center">
-                                    <div className="flex -space-x-2 mr-2">
-                                        {prompt.tool.split(',').map((t: string, i: number) => (
-                                            <div key={i} className="w-8 h-8 rounded-full bg-primary/20 border-2 border-background flex items-center justify-center text-[10px] font-bold text-primary shadow-sm">
-                                                {t.trim()[0]}
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Optimized for</p>
-                                        <div className="flex flex-wrap gap-1">
-                                            {prompt.tool.split(',').map((t: string, i: number) => (
-                                                <span key={i} className="text-sm font-bold text-foreground">
-                                                    {t.trim()}{i < prompt.tool.split(',').length - 1 ? ',' : ''}
-                                                </span>
-                                            ))}
+                                    <div className="clay-soft group relative aspect-square cursor-pointer overflow-hidden rounded-2xl">
+                                        <Image
+                                            src={prompt.afterImage}
+                                            alt="Result Image"
+                                            fill
+                                            sizes="120px"
+                                            className="object-cover transition-transform group-hover:scale-110"
+                                            style={{ objectPosition: prompt.thumbnailPos || "center" }}
+                                        />
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-[10px] font-bold uppercase text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
+                                            Result
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex-1"></div>
-                                <div className="flex items-center space-x-4 text-muted-foreground text-sm">
-                                    <span className="flex items-center space-x-1"><Eye size={16} /> <span>{prompt.views.toLocaleString()}</span></span>
-                                    <span className="flex items-center space-x-1"><Copy size={16} /> <span>{prompt.copies.toLocaleString()}</span></span>
-                                </div>
                             </div>
 
-                            {/* Prompt Box */}
-                            <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 relative group mb-8 shadow-inner overflow-hidden">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center space-x-2">
-                                        <Sparkles size={12} className="text-primary" />
-                                        <span>The Prompt</span>
-                                    </h3>
-                                    <div className="flex space-x-1">
-                                        <div className="w-2 h-2 rounded-full bg-slate-800" />
-                                        <div className="w-2 h-2 rounded-full bg-slate-800" />
-                                        <div className="w-2 h-2 rounded-full bg-slate-800" />
+                            <div className="flex flex-col">
+                                <div className="mb-4 flex flex-wrap items-center gap-2">
+                                    {prompt.categories?.map((cat) => (
+                                        <span key={cat.id} className="clay-soft rounded-full border border-primary/25 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary">
+                                            {cat.name}
+                                        </span>
+                                    ))}
+                                    {prompt.isTrending && (
+                                        <span className="clay-soft rounded-full border border-warning/30 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-warning">
+                                            Trending
+                                        </span>
+                                    )}
+                                </div>
+
+                                <h1 className="mb-4 text-4xl font-extrabold tracking-tight sm:text-5xl">{prompt.title}</h1>
+
+                                <p className="mb-7 text-base leading-relaxed text-muted-foreground sm:text-lg">
+                                    {prompt.description || "A powerful AI prompt designed for stunning visual results."}
+                                </p>
+
+                                <div className="mb-8 flex flex-wrap items-center gap-5 border-b border-border/60 pb-8">
+                                    <div className="flex flex-wrap items-center gap-3">
+                                        <div className="flex -space-x-2">
+                                            {prompt.tool.split(",").map((t: string, i: number) => (
+                                                <div key={i} className="clay flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-primary">
+                                                    {t.trim()[0]}
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Optimized for</p>
+                                            <div className="flex flex-wrap gap-1">
+                                                {prompt.tool.split(",").map((t: string, i: number) => (
+                                                    <span key={i} className="text-sm font-bold text-foreground">
+                                                        {t.trim()}{i < prompt.tool.split(",").length - 1 ? "," : ""}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="ml-auto flex items-center gap-4 text-sm text-muted-foreground">
+                                        <span className="inline-flex items-center gap-1"><Eye size={16} /> <span>{prompt.views.toLocaleString()}</span></span>
+                                        <span className="inline-flex items-center gap-1"><Copy size={16} /> <span>{prompt.copies.toLocaleString()}</span></span>
                                     </div>
                                 </div>
-                                <div className="max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                                    <p className="text-slate-300 font-mono text-sm leading-relaxed whitespace-pre-wrap break-words selection:bg-primary/30">
-                                        {prompt.promptText}
-                                    </p>
-                                </div>
-                            </div>
 
-                            {/* Instructions */}
-                            {prompt.instructions && (
-                                <div className="mb-8">
-                                    <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center space-x-2">
-                                        <CheckCircle2 size={14} className="text-primary" />
-                                        <span>Instructions</span>
-                                    </h3>
-                                    <div className="prose prose-sm dark:prose-invert">
-                                        <p className="whitespace-pre-line text-muted-foreground">
-                                            {prompt.instructions}
+                                <div className="clay-inset relative mb-8 overflow-hidden rounded-2xl p-5">
+                                    <div className="mb-4 flex items-center justify-between">
+                                        <h3 className="flex items-center space-x-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                            <Sparkles size={12} className="text-primary" />
+                                            <span>The Prompt</span>
+                                        </h3>
+                                        <div className="flex space-x-1">
+                                            <div className="h-2 w-2 rounded-full bg-border/80" />
+                                            <div className="h-2 w-2 rounded-full bg-border/80" />
+                                            <div className="h-2 w-2 rounded-full bg-border/80" />
+                                        </div>
+                                    </div>
+                                    <div className="max-h-[500px] overflow-y-auto pr-2">
+                                        <p className="whitespace-pre-wrap break-words font-mono text-sm leading-relaxed text-foreground/90 selection:bg-primary/30">
+                                            {prompt.promptText}
                                         </p>
                                     </div>
                                 </div>
-                            )}
 
-                            <div className="mt-auto flex flex-col items-start space-y-4">
-                                <div className="flex items-center space-x-4">
-                                    <CopyButton promptId={prompt.id} promptText={prompt.promptText} />
-                                    <ShareButton />
+                                {prompt.instructions && (
+                                    <div className="mb-8">
+                                        <h3 className="mb-4 flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                                            <CheckCircle2 size={14} className="text-primary" />
+                                            <span>Instructions</span>
+                                        </h3>
+                                        <div className="prose prose-sm dark:prose-invert">
+                                            <p className="whitespace-pre-line text-muted-foreground">
+                                                {prompt.instructions}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="mt-auto flex flex-col items-start space-y-4">
+                                    <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-4">
+                                        <CopyButton promptId={prompt.id} promptText={prompt.promptText} />
+                                        <ShareButton />
+                                    </div>
+                                    <ReportModal promptId={prompt.id} />
                                 </div>
-                                <ReportModal promptId={prompt.id} />
                             </div>
-
                         </div>
-                    </div>
+                    </section>
 
-                    {/* Related Prompts Section */}
                     {relatedPrompts.length > 0 && (
-                        <div className="border-t border-border/50 pt-16">
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
+                        <section className="section-shell clay-soft">
+                            <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                                 <div>
-                                    <h2 className="text-2xl font-bold flex items-center space-x-2">
-                                        <ThumbsUp size={24} className="text-primary" />
+                                    <h2 className="flex items-center space-x-2 text-2xl font-bold">
+                                        <ThumbsUp size={22} className="text-primary" />
                                         <span>Related Prompts</span>
                                     </h2>
                                     <p className="text-muted-foreground">More prompts from the {prompt.categories?.[0]?.name || "collection"}.</p>
                                 </div>
                                 {prompt.categories?.[0] && (
-                                    <Link href={`/categories/${prompt.categories[0].slug}`} className="text-sm font-bold text-primary hover:underline">
-                                        View Category →
+                                    <Link href={`/categories/${prompt.categories[0].slug}`} className="clay hover-lift rounded-full px-4 py-2 text-sm font-bold text-primary">
+                                        View Category -&gt;
                                     </Link>
                                 )}
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                                 {relatedPrompts.map((related: { id: string; title: string; categories?: { name: string }[]; tool: string; beforeImage: string; afterImage: string; views: number; copies: number; slug: string; thumbnailPos?: string }) => (
                                     <PromptCard
                                         key={related.id}
@@ -271,11 +263,10 @@ export default async function PromptPage({ params }: { params: Promise<{ slug: s
                                     />
                                 ))}
                             </div>
-                        </div>
+                        </section>
                     )}
                 </div>
             </main>
         </div>
     );
 }
-

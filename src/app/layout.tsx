@@ -1,12 +1,6 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import "./globals.css";
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://promptwale.com"),
@@ -45,14 +39,20 @@ export default async function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased bg-background text-foreground`}>
+      <body className="font-sans antialiased bg-background text-foreground">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          <div className="relative min-h-screen flex flex-col">
+          <div className="ambient-stage" aria-hidden="true">
+            <span className="ambient-orb ambient-orb--one" />
+            <span className="ambient-orb ambient-orb--two" />
+            <span className="ambient-orb ambient-orb--three" />
+            <span className="ambient-noise" />
+          </div>
+          <div className="relative site-shell flex min-h-screen flex-col">
             {children}
           </div>
         </ThemeProvider>

@@ -22,81 +22,79 @@ function SearchContent() {
                 const prompts = await searchPrompts(query);
                 setResults(prompts);
             } else {
-                // Fetch trending or latest if query is empty
                 const prompts = await getLatestPrompts(12);
                 setResults(prompts);
             }
             setIsLoading(false);
-        }, query.trim().length > 0 ? 500 : 0); // No debounce for empty state
+        }, query.trim().length > 0 ? 500 : 0);
 
         return () => clearTimeout(delayDebounceFn);
     }, [query]);
 
     return (
-        <main className="min-h-screen flex flex-col">
+        <main className="page-fade-in flex min-h-screen flex-col">
             <Navbar />
-            <div className="container mx-auto px-4 py-12 flex-1">
+            <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
+                <section className="section-shell clay-soft">
+                    <div className="relative z-10 mx-auto max-w-3xl">
+                        <h1 className="mb-7 text-center text-3xl font-extrabold sm:text-4xl">Search the Library</h1>
+                        <div className="relative">
+                            <div className="clay-inset flex h-16 items-center rounded-full pr-2">
+                                <SearchIcon className="ml-5 h-6 w-6 text-muted-foreground" />
+                                <input
+                                    type="text"
+                                    placeholder="Search by keywords, tools, or style..."
+                                    className="flex-1 bg-transparent px-4 py-2 text-base focus:outline-none placeholder:text-muted-foreground/60 sm:text-lg"
+                                    value={query}
+                                    onChange={(e) => setQuery(e.target.value)}
+                                    autoFocus
+                                />
+                                <button className="clay flex h-12 items-center space-x-2 rounded-full px-5 text-sm font-bold text-primary sm:text-base">
+                                    <span>Search</span>
+                                </button>
+                            </div>
+                        </div>
 
-                {/* Search Header */}
-                <div className="max-w-3xl mx-auto mb-16 relative z-10">
-                    <h1 className="text-3xl font-extrabold text-center mb-8">Search the Library</h1>
-                    <div className="relative group">
-                        <div className="absolute -inset-1 bg-gradient-to-r from-primary to-indigo-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-500"></div>
-                        <div className="relative flex items-center bg-card border border-border/50 rounded-full p-2 h-16 shadow-2xl">
-                            <SearchIcon className="ml-4 text-muted-foreground h-6 w-6" />
-                            <input
-                                type="text"
-                                placeholder="Search by keywords, tools, or style..."
-                                className="flex-1 bg-transparent px-4 py-2 text-lg focus:outline-none placeholder:text-muted-foreground/50"
-                                value={query}
-                                onChange={(e) => setQuery(e.target.value)}
-                                autoFocus
-                            />
-                            <button className="h-full px-6 bg-primary text-primary-foreground font-bold rounded-full hover:shadow-lg hover:shadow-primary/20 transition-all flex items-center space-x-2">
-                                <span>Search</span>
-                            </button>
+                        <div className="mt-5 flex flex-wrap items-center justify-center gap-3 text-center text-sm text-muted-foreground">
+                            <span className="inline-flex items-center space-x-1 rounded-full px-3 py-1">
+                                <SlidersHorizontal size={14} />
+                                <span>Advanced Filters</span>
+                            </span>
+                            <span>Try: &quot;Cyberpunk&quot;, &quot;Gemini&quot;, &quot;Portraits&quot;</span>
                         </div>
                     </div>
+                </section>
 
-                    <div className="flex items-center justify-center space-x-4 mt-6 text-sm text-muted-foreground">
-                        <span className="flex items-center space-x-1 cursor-pointer hover:text-foreground transition-colors"><SlidersHorizontal size={14} /> <span>Advanced Filters</span></span>
-                        <span>•</span>
-                        <span>Try: &quot;Cyberpunk&quot;, &quot;Gemini&quot;, &quot;Portraits&quot;</span>
-                    </div>
-                </div>
-
-                {/* Search Results Area */}
-                <div className="border-t border-border/50 pt-10">
-                    <div className="flex items-center justify-between mb-8">
+                <section className="section-shell clay-soft">
+                    <div className="mb-7 flex flex-wrap items-center justify-between gap-2">
                         <h2 className="text-xl font-bold">Search Results</h2>
                         <span className="text-sm text-muted-foreground">
                             {isLoading ? "Searching..." : `${results.length} results found`}
                         </span>
                     </div>
 
-                    {/* States */}
                     {isLoading ? (
-                        <div className="h-64 flex flex-col items-center justify-center text-center space-y-4">
-                            <Loader2 className="animate-spin text-primary relative top-2" size={32} />
+                        <div className="flex h-64 flex-col items-center justify-center space-y-4 text-center">
+                            <Loader2 className="relative top-2 animate-spin text-primary" size={32} />
                             <p className="font-bold">Searching library...</p>
                         </div>
                     ) : query.length < 2 ? (
-                        <div className="h-64 flex flex-col items-center justify-center text-center space-y-4 border-2 border-dashed border-border/50 rounded-3xl mb-8">
-                            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center">
+                        <div className="clay-inset mb-2 flex h-64 flex-col items-center justify-center space-y-4 rounded-3xl text-center">
+                            <div className="clay-soft flex h-16 w-16 items-center justify-center rounded-full">
                                 <SearchIcon className="text-muted-foreground" size={24} />
                             </div>
                             <div>
-                                <p className="font-bold text-lg">Start typing to search.</p>
-                                <p className="text-muted-foreground text-sm">Discover high-quality AI prompts.</p>
+                                <p className="text-lg font-bold">Start typing to search.</p>
+                                <p className="text-sm text-muted-foreground">Discover high-quality AI prompts.</p>
                             </div>
                         </div>
                     ) : results.length === 0 ? (
-                        <div className="h-64 flex flex-col items-center justify-center text-center space-y-4 border-2 border-dashed border-border/50 rounded-3xl mb-8">
-                            <p className="font-bold text-lg">No prompts found for &quot;{query}&quot;.</p>
-                            <p className="text-muted-foreground text-sm">Try adjusting your keywords.</p>
+                        <div className="clay-inset mb-2 flex h-64 flex-col items-center justify-center space-y-4 rounded-3xl text-center">
+                            <p className="text-lg font-bold">No prompts found for &quot;{query}&quot;.</p>
+                            <p className="text-sm text-muted-foreground">Try adjusting your keywords.</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                             {results.map((prompt) => (
                                 <PromptCard
                                     key={prompt.id}
@@ -114,7 +112,7 @@ function SearchContent() {
                             ))}
                         </div>
                     )}
-                </div>
+                </section>
             </div>
         </main>
     );

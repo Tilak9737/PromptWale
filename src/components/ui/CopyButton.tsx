@@ -24,7 +24,7 @@ export default function CopyButton({ promptId, promptText }: { promptId: string,
     return (
         <button
             onClick={handleCopy}
-            className="flex-1 py-4 bg-primary text-primary-foreground rounded-xl font-bold hover:shadow-lg hover:shadow-primary/25 transition-all flex items-center justify-center space-x-2"
+            className="clay hover-lift flex flex-1 items-center justify-center space-x-2 rounded-xl py-4 font-bold text-primary"
         >
             {copied ? <Check size={18} /> : <Copy size={18} />}
             <span>{copied ? "Copied!" : "Copy Prompt Setup"}</span>

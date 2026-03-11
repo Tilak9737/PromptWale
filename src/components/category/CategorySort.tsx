@@ -22,7 +22,7 @@ export default function CategorySort({ currentSort }: { currentSort: string }) {
         <select
             value={currentSort}
             onChange={handleSortChange}
-            className="px-4 py-2 border border-border rounded-full bg-background hover:bg-muted transition-colors text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
+            className="clay-soft cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30"
         >
             <option>Newest First</option>
             <option>Most Copied</option>

@@ -12,31 +12,38 @@ const TOOLS = [
 
 export default function ToolsPage() {
     return (
-        <main className="min-h-screen flex flex-col">
+        <main className="page-fade-in flex min-h-screen flex-col">
             <Navbar />
-            <div className="container mx-auto px-4 py-12 flex-1 max-w-7xl">
+            <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
+                <section className="section-shell clay-soft">
+                    <div className="flex flex-col items-center justify-center space-y-4 text-center">
+                        <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl">AI Generation Tools</h1>
+                        <p className="max-w-2xl text-base text-muted-foreground sm:text-lg">
+                            Filter prompts optimized for your preferred image synthesis engine.
+                        </p>
+                    </div>
+                </section>
 
-                <div className="flex flex-col items-center justify-center text-center mb-16 space-y-4">
-                    <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">AI Generation Tools</h1>
-                    <p className="text-muted-foreground text-lg max-w-2xl">
-                        Filter prompts optimized for your preferred image synthesis engine.
-                    </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {TOOLS.map(tool => (
-                        <Link href={`/search?tool=${encodeURIComponent(tool.name)}`} key={tool.name} className="bg-card border border-border/50 rounded-2xl p-6 shadow-sm hover:shadow-lg hover:border-primary/30 transition-all group flex flex-col items-center text-center cursor-pointer">
-                            <div className="w-16 h-16 bg-muted text-foreground rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-primary/10 group-hover:text-primary transition-all duration-300">
-                                {tool.icon}
-                            </div>
-                            <h2 className="text-xl font-bold mb-2">{tool.name}</h2>
-                            <p className="text-sm text-muted-foreground">{tool.desc}</p>
-                            <span className="mt-6 text-primary font-bold text-sm tracking-wide uppercase opacity-0 group-hover:opacity-100 transition-opacity">
-                                View Prompts &rarr;
-                            </span>
-                        </Link>
-                    ))}
-                </div>
+                <section className="section-shell clay-soft">
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {TOOLS.map((tool) => (
+                            <Link
+                                href={`/search?tool=${encodeURIComponent(tool.name)}`}
+                                key={tool.name}
+                                className="clay hover-lift group flex cursor-pointer flex-col items-center rounded-2xl p-6 text-center"
+                            >
+                                <div className="clay-soft mb-5 flex h-16 w-16 items-center justify-center rounded-2xl text-foreground transition-all duration-300 group-hover:scale-110 group-hover:text-primary">
+                                    {tool.icon}
+                                </div>
+                                <h2 className="mb-2 text-xl font-bold">{tool.name}</h2>
+                                <p className="text-sm text-muted-foreground">{tool.desc}</p>
+                                <span className="mt-5 text-sm font-bold uppercase tracking-wide text-primary opacity-0 transition-opacity group-hover:opacity-100">
+                                    View Prompts -&gt;
+                                </span>
+                            </Link>
+                        ))}
+                    </div>
+                </section>
             </div>
         </main>
     );

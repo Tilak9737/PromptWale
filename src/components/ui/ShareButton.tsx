@@ -15,7 +15,7 @@ export default function ShareButton() {
     return (
         <button
             onClick={handleShare}
-            className="p-4 bg-muted border border-border rounded-xl hover:bg-muted/80 transition-colors flex items-center justify-center"
+            className="clay-soft hover-lift flex items-center justify-center rounded-xl p-4 transition-colors"
             title="Share Prompt"
         >
             {copied ? <Check size={18} className="text-green-500" /> : <Share2 size={18} />}
